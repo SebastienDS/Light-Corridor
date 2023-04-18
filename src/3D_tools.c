@@ -2,19 +2,19 @@
 
 /* Camera parameters and functions */
 float theta = -90.0f; // Angle between x axis and viewpoint
-float phy = 86.0f; // Angle between z axis and viewpoint
+float phy = 90.0f; // Angle between z axis and viewpoint
 float dist_zoom = 2.0f; // Distance between origin and viewpoint
 
 // void setCamera() {
 // 	gluLookAt(dist_zoom*cos(toRad(theta))*sin(toRad(phy)),
 // 			  dist_zoom*sin(toRad(theta))*sin(toRad(phy)),
 // 			  dist_zoom*cos(toRad(phy)),
-// 			  0.0,0.0,0.0,
+// 			  0.0,0.5,0.0,
 // 			  0.0,0.0,1.0);
 // }
 
 void setCamera() {
-	gluLookAt(0, -1, 0.5, 0, 0, 0.5, 0, 0, 1);
+	gluLookAt(0, -0.8, 0.5, 0, 0, 0.5, 0, 0, 1);
 }
 
 /* Convert degree to radians */

@@ -150,6 +150,8 @@ int main(int argc, char** argv)
 
 		/* Scene rendering */
 		glPushMatrix();
+			glTranslatef(0, 0.5, 0);
+
 			drawWall(0.4, 0.4, 0.4);
 			glPushMatrix();
 				glTranslatef(0, 0.5, 0);
@@ -195,8 +197,35 @@ int main(int argc, char** argv)
 			glPopMatrix();
 		glPopMatrix();
 
+
+		// ball
 		glPushMatrix();
-			glTranslatef(0, 3, 0);
+			glTranslatef(0, 1.5, 0.5);
+			glScalef(0.1, 0.1, 0.1);
+       		glColor3f(0.1, 1, 0.1);
+			drawSphere();
+		glPopMatrix();
+
+		glPushMatrix();
+			glTranslatef(0, 1.5, 0.01);
+			glScalef(0.1, 0.1, 0.1);
+       		glColor3f(0.3, 0.3, 0.3);
+			drawCircle();
+		glPopMatrix();
+
+
+		// wall
+		// glPushMatrix();
+		// 	glColor4f(1, 0, 0, 0.8);
+		// 	glTranslatef(0, 1, 0);
+		// 	glRotatef(90, 1, 0, 0);
+		// 	drawFilledSquare();
+		// glPopMatrix();
+
+
+		// shadow
+		glPushMatrix();
+			glTranslatef(0, 3.5, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 1);
 			glRotatef(-90, 1, 0, 0);
@@ -206,7 +235,7 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		glPushMatrix();
-			glTranslatef(0, 2, 0);
+			glTranslatef(0, 2.5, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 0.5);
 			glRotatef(-90, 1, 0, 0);
@@ -216,7 +245,7 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		glPushMatrix();
-			glTranslatef(0, 1, 0);
+			glTranslatef(0, 1.5, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 0.25);
 			glRotatef(-90, 1, 0, 0);
@@ -226,7 +255,7 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		glPushMatrix();
-			glTranslatef(0, 0.5, 0);
+			glTranslatef(0, 1, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 0.1);
 			glRotatef(-90, 1, 0, 0);

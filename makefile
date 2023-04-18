@@ -7,17 +7,17 @@ INCDIR	= inc/
 SRCDIR	= src/
 OBJDIR	= obj/
 
-GLOB_OBJ_TD= $(OBJDIR)3D_tools.o
+GLOB_OBJ= $(OBJDIR)3D_tools.o
 
-OBJ= $(GLOB_OBJ_TD) $(OBJDIR)draw_scene.o $(OBJDIR)main.o
+OBJ= $(GLOB_OBJ) $(OBJDIR)draw_scene.o $(OBJDIR)main.o
 EXEC= corridor.out
 
 
 all : create_dir run 
 
 create_dir : 
-	mkdir $(BINDIR) 
-	mkdir $(OBJDIR)
+	mkdir -p $(BINDIR) 
+	mkdir -p $(OBJDIR)
 
 run : $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $(BINDIR)$(EXEC) $(LDFLAGS)
