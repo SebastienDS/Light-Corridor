@@ -10,7 +10,7 @@
 
 /* Window properties */
 static const unsigned int WINDOW_WIDTH = 1000;
-static const unsigned int WINDOW_HEIGHT = 700;
+static const unsigned int WINDOW_HEIGHT = 500;
 static const char WINDOW_TITLE[] = "Light Corridor";
 static float aspectRatio = 1.0;
 
@@ -21,8 +21,9 @@ static const double FRAMERATE_IN_SECONDS = 1. / 30.;
 static int flag_animate_rot_scale = 0;
 static int flag_animate_rot_arm = 0;
 
-static float angle = 0;
-static float rotateBalance = 0;
+
+static float currentPosition = 0;
+static int currentDirection = 0;
 
 
 /* Error handling function */
@@ -84,7 +85,20 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_RIGHT :
 				theta += 5;
 				break;
+			case GLFW_KEY_W:
+				currentDirection = 1;
+				break;
+			case GLFW_KEY_S:
+				currentDirection = -1;
+				break;
 			default: fprintf(stdout,"Touche non gérée (%d)\n",key);
+		}
+	} else if (action == GLFW_RELEASE) {
+		switch(key) {
+			case GLFW_KEY_W:
+			case GLFW_KEY_S:
+				currentDirection = 0;
+				break;
 		}
 	}
 }
@@ -149,83 +163,65 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		/* Scene rendering */
+		Color corridorColor = {0.4, 0.4, 0.4};
 		glPushMatrix();
-			glTranslatef(0, 0.5, 0);
+			float position = currentPosition - (int)currentPosition;
 
-			drawWall(0.4, 0.4, 0.4);
-			glPushMatrix();
-				glTranslatef(0, 0.5, 0);
-				glScalef(2, 1, 1);
-				glColor3f(1, 1, 1);
-        		glRotatef(-90, 1, 0, 0);
-				glTranslatef(0, -0.5, 0);
-				glScalef(0.99, 0.99, 0.99);
-				drawSquare();
-			glPopMatrix();
-			glTranslatef(0, 1, 0);
-			drawWall(0.4, 0.4, 0.4);
-			glPushMatrix();
-				glTranslatef(0, 0.5, 0);
-				glScalef(2, 1, 1);
-				glColor3f(1, 1, 1);
-        		glRotatef(-90, 1, 0, 0);
-				glTranslatef(0, -0.5, 0);
-				glScalef(0.99, 0.99, 0.99);
-				drawSquare();
-			glPopMatrix();
-			glTranslatef(0, 1, 0);
-			drawWall(0.4, 0.4, 0.4);
-			glPushMatrix();
-				glTranslatef(0, 0.5, 0);
-				glScalef(2, 1, 1);
-				glColor3f(1, 1, 1);
-        		glRotatef(-90, 1, 0, 0);
-				glTranslatef(0, -0.5, 0);
-				glScalef(0.99, 0.99, 0.99);
-				drawSquare();
-			glPopMatrix();
-			glTranslatef(0, 1, 0);
-			drawWall(0.4, 0.4, 0.4);
-			glPushMatrix();
-				glTranslatef(0, 0.5, 0);
-				glScalef(2, 1, 1);
-				glColor3f(1, 1, 1);
-        		glRotatef(-90, 1, 0, 0);
-				glTranslatef(0, -0.5, 0);
-				glScalef(0.99, 0.99, 0.99);
-				drawSquare();
-			glPopMatrix();
+			glTranslatef(0, 0.5 - position, 0);
+
+			for (int i = 0; i < 5; i++) {
+				drawCorridorPart(corridorColor);
+				drawSeparator();
+
+				glTranslatef(0, 1, 0);
+			}
 		glPopMatrix();
 
 
 		// ball
-		glPushMatrix();
-			glTranslatef(0, 1.5, 0.5);
-			glScalef(0.1, 0.1, 0.1);
-       		glColor3f(0.1, 1, 0.1);
-			drawSphere();
-		glPopMatrix();
-
-		glPushMatrix();
-			glTranslatef(0, 1.5, 0.01);
-			glScalef(0.1, 0.1, 0.1);
-       		glColor3f(0.3, 0.3, 0.3);
-			drawCircle();
-		glPopMatrix();
-
+		Info ball = {0, 1.5, 0.5, 0.1, 0.1, 0.1};
+		Color color = {0, 1, 0};
 
 		// wall
-		// glPushMatrix();
-		// 	glColor4f(1, 0, 0, 0.8);
-		// 	glTranslatef(0, 1, 0);
-		// 	glRotatef(90, 1, 0, 0);
-		// 	drawFilledSquare();
-		// glPopMatrix();
+		int count = 6;
+		Info walls[] = {
+			{-0.75, 1, 0.25, 0.5, 0.5, 1},
+			{0.75, 1, -0.25, 0.5, 0.5, 1},
+
+			{-0.75, 2, 0, 0.5, 1, 1},
+			{0.75, 2, 0, 0.5, 1, 1},
+
+			{0, 3, 0, 0.5, 1, 1},
+			{0, 4, 0, 2, 0.5, 1}
+		};
+		Color colors[] = {
+			{1, 0.4, 0.5},
+			{1, 0.4, 0.5},
+
+			{0.5, 0.5, 0.5},
+			{0.5, 0.5, 0.5},
+
+			{1, 0, 0},
+			{0, 0, 1}
+		};
+
+		glPushMatrix();
+		glTranslatef(0, -currentPosition, 0);
+			drawBall(ball, color);
+
+			for (int i = 0; i < count; i++) {
+				
+				drawWall(walls[i], colors[i]);
+			}
+		glPopMatrix();
+
+
+		currentPosition += currentDirection * 0.01;
 
 
 		// shadow
 		glPushMatrix();
-			glTranslatef(0, 3.5, 0);
+			glTranslatef(0, 4.5, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 1);
 			glRotatef(-90, 1, 0, 0);
@@ -235,7 +231,7 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		glPushMatrix();
-			glTranslatef(0, 2.5, 0);
+			glTranslatef(0, 3, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 0.5);
 			glRotatef(-90, 1, 0, 0);
@@ -245,7 +241,7 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		glPushMatrix();
-			glTranslatef(0, 1.5, 0);
+			glTranslatef(0, 2, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 0.25);
 			glRotatef(-90, 1, 0, 0);
@@ -255,7 +251,7 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		glPushMatrix();
-			glTranslatef(0, 1, 0);
+			glTranslatef(0, 1.5, 0);
 			glScalef(2, 1, 1);
 			glColor4f(0, 0, 0, 0.1);
 			glRotatef(-90, 1, 0, 0);
@@ -264,6 +260,7 @@ int main(int argc, char** argv)
 			drawFilledSquare();
 		glPopMatrix();
 		
+
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
