@@ -8,6 +8,7 @@
 #include <math.h>
 #include "3D_tools.h"
 #include "draw_scene.h"
+#include "transition.h"
 
 /* Window properties */
 static const unsigned int WINDOW_WIDTH = 1000;
@@ -183,7 +184,7 @@ int main(int argc, char** argv)
 	Vec speed = {0.02, 0.02, 0.02}; // TODO normalize + norme
 	Color color = {0, 1, 0};
 
-	int count = 6;
+	int count = 7;
 	Info walls[] = {
 		{-0.75, 1, 0.75, 0.5, 0, 0.5},
 		{0.75, 1, 0.25, 0.5, 0, 0.5},
@@ -192,7 +193,9 @@ int main(int argc, char** argv)
 		{0.75, 2, 0.5, 0.5, 0, 1},
 
 		{0, 3, 0.5, 0.5, 0, 1},
-		{0, 4, 0.5, 2, 0, 1}
+		{0, 4, 0.5, 2, 0, 1},
+
+		{0, 5, 0.5, 2, 0, 1}
 	};
 	Color colors[] = {
 		{1, 0.4, 0.5},
@@ -202,7 +205,22 @@ int main(int argc, char** argv)
 		{0.5, 0.5, 0.5},
 
 		{1, 0, 0},
-		{0, 0, 1}
+		{0, 0, 1},
+		{0.5, 0.5, 1}
+	};
+
+
+	Transition transitions[] = {
+		createMovementTransition((Vec){0, 0, -0.01}, -25, 25, -25),
+		createMovementTransition((Vec){0, 0, 0.01}, -25, 25, -25),
+
+		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, 25),
+		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, -25),
+		
+		createMovementTransition((Vec){0.01, 0, 0}, -75, 75, 0),
+		createScalingTransition((Vec){0.025, 0, 0.01}, -30, 30, 30),
+
+		createNoTransition()
 	};
 
 
@@ -280,6 +298,11 @@ int main(int argc, char** argv)
 		ball.x += speed.x;
 		ball.y += speed.y;
 		ball.z += speed.z;
+
+		for (int i = 0; i < count; i++) {
+			applyTransition(&walls[i], &transitions[i]);
+		}
+
 
 		// shadow
 		glPushMatrix();
