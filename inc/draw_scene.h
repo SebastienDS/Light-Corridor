@@ -11,10 +11,16 @@ typedef struct {
     float x;
     float y;
     float z;
-    float x_scale;
-    float y_scale;
-    float z_scale;
+    float size_x;
+    float size_y;
+    float size_z;
 } Info;
+
+typedef struct {
+    float x;
+    float y;
+    float z;
+} Vec;
 
 typedef struct {
     float r;

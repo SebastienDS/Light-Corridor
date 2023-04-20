@@ -60,8 +60,7 @@ void drawWall(Info info, Color color) {
         glColor4f(color.r, color.g, color.b, 0.8);
         glTranslatef(info.x, info.y, info.z);
         glRotatef(90, 1, 0, 0);
-        glTranslatef(0, 0.5, 0);
-        glScalef(info.x_scale, info.y_scale, 1);
+        glScalef(info.size_x, info.size_z, 1);
         drawFilledSquare();
     glPopMatrix();
 }
@@ -69,7 +68,7 @@ void drawWall(Info info, Color color) {
 void drawBallShadow(Info info) {
     glPushMatrix();
         glTranslatef(info.x, info.y, 0.01);
-        glScalef(info.x_scale, info.y_scale, info.z_scale);
+        glScalef(info.size_x / 2, info.size_y / 2, info.size_z / 2);
         glColor3f(0.3, 0.3, 0.3);
         drawCircle();
     glPopMatrix();
@@ -78,7 +77,7 @@ void drawBallShadow(Info info) {
 void drawBall(Info info, Color color) {
     glPushMatrix();
         glTranslatef(info.x, info.y, info.z);
-        glScalef(info.x_scale, info.y_scale, info.z_scale);
+        glScalef(info.size_x / 2, info.size_y / 2, info.size_z / 2);
         glColor3f(color.r, color.g, color.b);
         drawSphere();
     glPopMatrix();

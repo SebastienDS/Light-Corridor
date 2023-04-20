@@ -4,6 +4,7 @@
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <math.h>
 #include "3D_tools.h"
 #include "draw_scene.h"
@@ -103,6 +104,48 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 	}
 }
 
+float sumRadiusX(Info cube, Info cube2) {
+	return cube.size_x / 2 + cube2.size_x / 2;
+}
+
+float sumRadiusY(Info cube, Info cube2) {
+	return cube.size_y / 2 + cube2.size_y / 2;
+}
+
+float sumRadiusZ(Info cube, Info cube2) {
+	return cube.size_z / 2 + cube2.size_z / 2;
+}
+
+float distanceX(Info cube, Info cube2) {
+	return fabs(cube.x - cube2.x);
+}
+
+float distanceY(Info cube, Info cube2) {
+	return fabs(cube.y - cube2.y);
+}
+
+float distanceZ(Info cube, Info cube2) {
+	return fabs(cube.z - cube2.z);
+}
+
+bool intersectRect(Info cube, Info cube2) {
+	return distanceX(cube, cube2) <= sumRadiusX(cube, cube2)
+		&& distanceY(cube, cube2) <= sumRadiusY(cube, cube2)
+		&& distanceZ(cube, cube2) <= sumRadiusZ(cube, cube2);
+}
+
+bool intersectCorridorX(Info ball) {
+	return ball.x - ball.size_x / 2 <= -1 || ball.x + ball.size_x / 2 >= 1;
+}
+
+bool intersectCorridorZ(Info ball) {
+	return ball.z - ball.size_z / 2 <= 0 || ball.z + ball.size_z / 2 >= 1;
+}
+
+bool intersectPlayer(Info ball, float playerPosition) {
+	return ball.y <= playerPosition;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -134,6 +177,34 @@ int main(int argc, char** argv)
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_BLEND );
+
+
+	Info ball = {0, 0.5, 0.5, 0.2, 0.2, 0.2};
+	Vec speed = {0.02, 0.02, 0.02}; // TODO normalize + norme
+	Color color = {0, 1, 0};
+
+	int count = 6;
+	Info walls[] = {
+		{-0.75, 1, 0.75, 0.5, 0, 0.5},
+		{0.75, 1, 0.25, 0.5, 0, 0.5},
+
+		{-0.75, 2, 0.5, 0.5, 0, 1},
+		{0.75, 2, 0.5, 0.5, 0, 1},
+
+		{0, 3, 0.5, 0.5, 0, 1},
+		{0, 4, 0.5, 2, 0, 1}
+	};
+	Color colors[] = {
+		{1, 0.4, 0.5},
+		{1, 0.4, 0.5},
+
+		{0.5, 0.5, 0.5},
+		{0.5, 0.5, 0.5},
+
+		{1, 0, 0},
+		{0, 0, 1}
+	};
+
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
@@ -178,46 +249,37 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 
-		// ball
-		Info ball = {0, 1.5, 0.5, 0.1, 0.1, 0.1};
-		Color color = {0, 1, 0};
-
-		// wall
-		int count = 6;
-		Info walls[] = {
-			{-0.75, 1, 0.25, 0.5, 0.5, 1},
-			{0.75, 1, -0.25, 0.5, 0.5, 1},
-
-			{-0.75, 2, 0, 0.5, 1, 1},
-			{0.75, 2, 0, 0.5, 1, 1},
-
-			{0, 3, 0, 0.5, 1, 1},
-			{0, 4, 0, 2, 0.5, 1}
-		};
-		Color colors[] = {
-			{1, 0.4, 0.5},
-			{1, 0.4, 0.5},
-
-			{0.5, 0.5, 0.5},
-			{0.5, 0.5, 0.5},
-
-			{1, 0, 0},
-			{0, 0, 1}
-		};
-
 		glPushMatrix();
-		glTranslatef(0, -currentPosition, 0);
+			glTranslatef(0, -currentPosition, 0);
+
 			drawBall(ball, color);
 
 			for (int i = 0; i < count; i++) {
-				
 				drawWall(walls[i], colors[i]);
 			}
 		glPopMatrix();
 
 
-		currentPosition += currentDirection * 0.01;
+		currentPosition += currentDirection * 0.1;
 
+		if (intersectCorridorX(ball)) {
+			speed.x *= -1;
+		} else if (intersectCorridorZ(ball)) {
+			speed.z *= -1;
+		}
+		if (intersectPlayer(ball, currentPosition)) {
+			speed.y = fabs(speed.y);
+		}
+
+		for (int i = 0; i < count; i++) {
+			if (intersectRect(ball, walls[i])) {
+				speed.y *= -1;
+			}
+		}
+
+		ball.x += speed.x;
+		ball.y += speed.y;
+		ball.z += speed.z;
 
 		// shadow
 		glPushMatrix();
