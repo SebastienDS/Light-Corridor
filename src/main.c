@@ -20,11 +20,8 @@ static float aspectRatio = 1.0;
 static const double FRAMERATE_IN_SECONDS = 1. / 30.;
 
 /* IHM flag */
-static int flag_animate_rot_scale = 0;
-static int flag_animate_rot_arm = 0;
+static bool flagTransitions = false;
 
-
-static float currentPosition = 0;
 static int currentDirection = 0;
 
 
@@ -59,11 +56,8 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_P :
 				glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
 				break;
-			case GLFW_KEY_R :
-				flag_animate_rot_arm = 1-flag_animate_rot_arm;
-				break;
 			case GLFW_KEY_T :
-				flag_animate_rot_scale = 1-flag_animate_rot_scale;
+				flagTransitions = !flagTransitions;
 				break;
 			case GLFW_KEY_KP_9 :
 				if(dist_zoom<100.0f) dist_zoom*=1.1;
@@ -143,10 +137,6 @@ bool intersectCorridorZ(Info ball) {
 	return ball.z - ball.size_z / 2 <= 0 || ball.z + ball.size_z / 2 >= 1;
 }
 
-bool intersectPlayer(Info ball, float playerPosition) {
-	return ball.y <= playerPosition;
-}
-
 
 int main(int argc, char** argv)
 {
@@ -189,13 +179,13 @@ int main(int argc, char** argv)
 		{-0.75, 1, 0.75, 0.5, 0, 0.5},
 		{0.75, 1, 0.25, 0.5, 0, 0.5},
 
-		{-0.75, 2, 0.5, 0.5, 0, 1},
-		{0.75, 2, 0.5, 0.5, 0, 1},
+		{-0.75, 3, 0.5, 0.5, 0, 1},
+		{0.75, 3, 0.5, 0.5, 0, 1},
 
-		{0, 3, 0.5, 0.5, 0, 1},
-		{0, 4, 0.5, 2, 0, 1},
+		{0, 5, 0.5, 0.5, 0, 1},
+		{0, 7, 0.5, 2, 0, 1},
 
-		{0, 5, 0.5, 2, 0, 1}
+		{0, 9, 0.5, 2, 0, 1}
 	};
 	Color colors[] = {
 		{1, 0.4, 0.5},
@@ -209,7 +199,6 @@ int main(int argc, char** argv)
 		{0.5, 0.5, 1}
 	};
 
-
 	Transition transitions[] = {
 		createMovementTransition((Vec){0, 0, -0.01}, -25, 25, -25),
 		createMovementTransition((Vec){0, 0, 0.01}, -25, 25, -25),
@@ -222,6 +211,11 @@ int main(int argc, char** argv)
 
 		createNoTransition()
 	};
+
+
+	Info player = {0, 0, 0.5, 0.35, 0, 0.35};
+	Color playerColor = {0, 0, 1};
+
 
 
 	/* Loop until the user closes the window */
@@ -254,7 +248,7 @@ int main(int argc, char** argv)
 		/* Scene rendering */
 		Color corridorColor = {0.4, 0.4, 0.4};
 		glPushMatrix();
-			float position = currentPosition - (int)currentPosition;
+			float position = player.y - (int)player.y;
 
 			glTranslatef(0, 0.5 - position, 0);
 
@@ -268,39 +262,47 @@ int main(int argc, char** argv)
 
 
 		glPushMatrix();
-			glTranslatef(0, -currentPosition, 0);
+			glTranslatef(0, -player.y, 0);
 
 			drawBall(ball, color);
 
-			for (int i = 0; i < count; i++) {
+			for (int i = count - 1; i >= 0; i--) {
 				drawWall(walls[i], colors[i]);
 			}
+
+			drawPlayer(player, playerColor);
 		glPopMatrix();
 
-
-		currentPosition += currentDirection * 0.1;
 
 		if (intersectCorridorX(ball)) {
 			speed.x *= -1;
 		} else if (intersectCorridorZ(ball)) {
 			speed.z *= -1;
 		}
-		if (intersectPlayer(ball, currentPosition)) {
+		if (intersectRect(ball, player)) {
 			speed.y = fabs(speed.y);
+			printf("player\n");
+		} else if (ball.y <= player.y) {
+			// vie--;
 		}
-
+		
 		for (int i = 0; i < count; i++) {
 			if (intersectRect(ball, walls[i])) {
 				speed.y *= -1;
 			}
 		}
 
+
+		player.y += currentDirection * 0.1;
+
 		ball.x += speed.x;
 		ball.y += speed.y;
 		ball.z += speed.z;
 
-		for (int i = 0; i < count; i++) {
-			applyTransition(&walls[i], &transitions[i]);
+		if (flagTransitions) {
+			for (int i = 0; i < count; i++) {
+				applyTransition(&walls[i], &transitions[i]);
+			}
 		}
 
 

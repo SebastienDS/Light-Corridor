@@ -37,3 +37,5 @@ void drawSeparator();
 void drawWall(Info info, Color color);
 
 void drawBall(Info info, Color color);
+
+void drawPlayer(Info info, Color color);

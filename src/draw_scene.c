@@ -84,3 +84,13 @@ void drawBall(Info info, Color color) {
 
     drawBallShadow(info);
 }
+
+void drawPlayer(Info info, Color color) {
+    glPushMatrix();
+        glColor3f(color.r, color.g, color.b);
+        glTranslatef(info.x, info.y, info.z);
+        glRotatef(90, 1, 0, 0);
+        glScalef(info.size_x, info.size_z, 1);
+        drawSquare();
+    glPopMatrix();
+}
