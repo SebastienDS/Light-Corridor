@@ -1,4 +1,4 @@
-#include "transition.h"
+#include "core.h"
 
 
 Transition createNoTransition() {
@@ -22,17 +22,17 @@ void stepTransition(Transition* transition) {
 }
 
 void applyMovementTransition(Info* info, Transition* transition) {
-    info->x += transition->increment * transition->step.x;
-    info->y += transition->increment * transition->step.y;
-    info->z += transition->increment * transition->step.z;
+    info->position.x += transition->increment * transition->step.x;
+    info->position.y += transition->increment * transition->step.y;
+    info->position.z += transition->increment * transition->step.z;
 
     stepTransition(transition);
 }
 
 void applyScalingTransition(Info* info, Transition* transition) {
-    info->size_x += transition->increment * transition->step.x;
-    info->size_y += transition->increment * transition->step.y;
-    info->size_z += transition->increment * transition->step.z;
+    info->size.x += transition->increment * transition->step.x;
+    info->size.y += transition->increment * transition->step.y;
+    info->size.z += transition->increment * transition->step.z;
 
     stepTransition(transition);
 }

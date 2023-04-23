@@ -8,7 +8,7 @@
 #include <math.h>
 #include "3D_tools.h"
 #include "draw_scene.h"
-#include "transition.h"
+#include "core.h"
 
 /* Window properties */
 static const unsigned int WINDOW_WIDTH = 1000;
@@ -100,27 +100,27 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 }
 
 float sumRadiusX(Info cube, Info cube2) {
-	return cube.size_x / 2 + cube2.size_x / 2;
+	return cube.size.x / 2 + cube2.size.x / 2;
 }
 
 float sumRadiusY(Info cube, Info cube2) {
-	return cube.size_y / 2 + cube2.size_y / 2;
+	return cube.size.y / 2 + cube2.size.y / 2;
 }
 
 float sumRadiusZ(Info cube, Info cube2) {
-	return cube.size_z / 2 + cube2.size_z / 2;
+	return cube.size.z / 2 + cube2.size.z / 2;
 }
 
 float distanceX(Info cube, Info cube2) {
-	return fabs(cube.x - cube2.x);
+	return fabs(cube.position.x - cube2.position.x);
 }
 
 float distanceY(Info cube, Info cube2) {
-	return fabs(cube.y - cube2.y);
+	return fabs(cube.position.y - cube2.position.y);
 }
 
 float distanceZ(Info cube, Info cube2) {
-	return fabs(cube.z - cube2.z);
+	return fabs(cube.position.z - cube2.position.z);
 }
 
 bool intersectRect(Info cube, Info cube2) {
@@ -130,13 +130,60 @@ bool intersectRect(Info cube, Info cube2) {
 }
 
 bool intersectCorridorX(Info ball) {
-	return ball.x - ball.size_x / 2 <= -1 || ball.x + ball.size_x / 2 >= 1;
+	return ball.position.x - ball.size.x / 2 <= -1 || ball.position.x + ball.size.x / 2 >= 1;
 }
 
 bool intersectCorridorZ(Info ball) {
-	return ball.z - ball.size_z / 2 <= 0 || ball.z + ball.size_z / 2 >= 1;
+	return ball.position.z - ball.size.z / 2 <= 0 || ball.position.z + ball.size.z / 2 >= 1;
 }
 
+
+Level createLevel1() {
+	Level level;
+	level.distance = 10;
+	level.walls_count = 7;
+	level.walls = malloc(level.walls_count * sizeof(Wall));
+	REQUIRE_NON_NULL(level.walls);
+
+	
+	level.walls[0] = (Wall) {
+		(Info){-0.75, 1, 0.75, 0.5, 0, 0.5},
+		(Color){1, 0.4, 0.5},
+		createMovementTransition((Vec){0, 0, -0.01}, -25, 25, -25)
+	};
+	level.walls[1] = (Wall) {
+		(Info){0.75, 1, 0.25, 0.5, 0, 0.5},
+		(Color){1, 0.4, 0.5},
+		createMovementTransition((Vec){0, 0, 0.01}, -25, 25, -25)
+	};
+	level.walls[2] = (Wall) {
+		(Info){-0.75, 3, 0.5, 0.5, 0, 1},
+		(Color){0.5, 0.5, 0.5},
+		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, 25)
+	};
+	level.walls[3] = (Wall) {
+		(Info){0.75, 3, 0.5, 0.5, 0, 1},
+		(Color){0.5, 0.5, 0.5},
+		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, -25)
+	};
+	level.walls[4] = (Wall) {
+		(Info){0, 5, 0.5, 0.5, 0, 1},
+		(Color){1, 0, 0},
+		createMovementTransition((Vec){0.01, 0, 0}, -75, 75, 0)
+	};
+	level.walls[5] = (Wall) {
+		(Info){0, 7, 0.5, 2, 0, 1},
+		(Color){0, 0, 1},
+		createScalingTransition((Vec){0.025, 0, 0.01}, -30, 30, 30)
+	};
+	level.walls[6] = (Wall) {
+		(Info){0, 9, 0.5, 2, 0, 1},
+		(Color){0.5, 0.5, 1},
+		createNoTransition()
+	};
+
+	return level;
+}
 
 int main(int argc, char** argv)
 {
@@ -169,53 +216,20 @@ int main(int argc, char** argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_BLEND );
 
-
-	Info ball = {0, 0.5, 0.5, 0.2, 0.2, 0.2};
-	Vec speed = {0.02, 0.02, 0.02}; // TODO normalize + norme
-	Color color = {0, 1, 0};
-
-	int count = 7;
-	Info walls[] = {
-		{-0.75, 1, 0.75, 0.5, 0, 0.5},
-		{0.75, 1, 0.25, 0.5, 0, 0.5},
-
-		{-0.75, 3, 0.5, 0.5, 0, 1},
-		{0.75, 3, 0.5, 0.5, 0, 1},
-
-		{0, 5, 0.5, 0.5, 0, 1},
-		{0, 7, 0.5, 2, 0, 1},
-
-		{0, 9, 0.5, 2, 0, 1}
-	};
-	Color colors[] = {
-		{1, 0.4, 0.5},
-		{1, 0.4, 0.5},
-
-		{0.5, 0.5, 0.5},
-		{0.5, 0.5, 0.5},
-
-		{1, 0, 0},
-		{0, 0, 1},
-		{0.5, 0.5, 1}
+	GameState gs;
+	gs.player = (Player){
+		(Info){0, 0, 0.5, 0.35, 0, 0.35},
+		(Color){0, 0, 1}
 	};
 
-	Transition transitions[] = {
-		createMovementTransition((Vec){0, 0, -0.01}, -25, 25, -25),
-		createMovementTransition((Vec){0, 0, 0.01}, -25, 25, -25),
-
-		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, 25),
-		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, -25),
-		
-		createMovementTransition((Vec){0.01, 0, 0}, -75, 75, 0),
-		createScalingTransition((Vec){0.025, 0, 0.01}, -30, 30, 30),
-
-		createNoTransition()
+	gs.ball = (Ball){
+		(Info){0, 0.5, 0.5, 0.2, 0.2, 0.2},
+		(Vec){0.02, 0.02, 0.02},
+		1,
+		(Color){0, 1, 0}
 	};
 
-
-	Info player = {0, 0, 0.5, 0.35, 0, 0.35};
-	Color playerColor = {0, 0, 1};
-
+	gs.level = createLevel1();
 
 
 	/* Loop until the user closes the window */
@@ -248,7 +262,7 @@ int main(int argc, char** argv)
 		/* Scene rendering */
 		Color corridorColor = {0.4, 0.4, 0.4};
 		glPushMatrix();
-			float position = player.y - (int)player.y;
+			float position = gs.player.info.position.y - (int)gs.player.info.position.y;
 
 			glTranslatef(0, 0.5 - position, 0);
 
@@ -262,48 +276,50 @@ int main(int argc, char** argv)
 
 
 		glPushMatrix();
-			glTranslatef(0, -player.y, 0);
+			glTranslatef(0, -gs.player.info.position.y, 0);
 
-			drawBall(ball, color);
+			drawBall(&gs.ball);
 
-			for (int i = count - 1; i >= 0; i--) {
-				drawWall(walls[i], colors[i]);
+			for (int i = gs.level.walls_count - 1; i >= 0; i--) {
+				drawWall(&gs.level.walls[i]);
 			}
 
-			drawPlayer(player, playerColor);
+			drawPlayer(&gs.player);
 		glPopMatrix();
 
 
-		if (intersectCorridorX(ball)) {
-			speed.x *= -1;
-		} else if (intersectCorridorZ(ball)) {
-			speed.z *= -1;
+		if (intersectCorridorX(gs.ball.info)) {
+			gs.ball.direction.x *= -1;
+		} else if (intersectCorridorZ(gs.ball.info)) {
+			gs.ball.direction.z *= -1;
 		}
-		if (intersectRect(ball, player)) {
-			speed.y = fabs(speed.y);
+		if (intersectRect(gs.ball.info, gs.player.info)) {
+			gs.ball.direction.y = fabs(gs.ball.direction.y);
 			printf("player\n");
-		} else if (ball.y <= player.y) {
+		} else if (gs.ball.info.position.y <= gs.ball.info.position.y) {
 			// vie--;
 		}
 		
-		for (int i = 0; i < count; i++) {
-			if (intersectRect(ball, walls[i])) {
-				speed.y *= -1;
+		for (int i = 0; i < gs.level.walls_count; i++) {
+			if (intersectRect(gs.ball.info, gs.level.walls[i].info)) {
+				gs.ball.direction.y *= -1;
 			}
 		}
 
 
-		player.y += currentDirection * 0.1;
+		gs.player.info.position.y += currentDirection * 0.1;
 
-		ball.x += speed.x;
-		ball.y += speed.y;
-		ball.z += speed.z;
+		gs.ball.info.position.x += gs.ball.direction.x;
+		gs.ball.info.position.y += gs.ball.direction.y;
+		gs.ball.info.position.z += gs.ball.direction.z;
 
 		if (flagTransitions) {
-			for (int i = 0; i < count; i++) {
-				applyTransition(&walls[i], &transitions[i]);
+			for (int i = 0; i < gs.level.walls_count; i++) {
+				applyTransition(&gs.level.walls[i].info, &gs.level.walls[i].transition);
 			}
 		}
+
+		printf("Score : %f\n", gs.player.info.position.y * 100);
 
 
 		// shadow
