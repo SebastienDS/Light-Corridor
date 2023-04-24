@@ -27,8 +27,8 @@ static Vec playerDirection = {0, 0, 0};
 
 static GameState gs;
 
-static const float PLAYER_SPEED = 0.05;
-static const float BALL_SPEED = 0.1;
+static const float BALL_SPEED = 0.05;
+static const float PLAYER_SPEED = 0.025;
 
 
 /* Error handling function */
@@ -298,6 +298,7 @@ void update(GameState* gs) {
 
 	if (!gs->set_ball_on_player) {
 		if (intersectRect(gs->ball.info, gs->player.info)) {
+			gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
 			Vec bounce = {
 				gs->ball.info.position.x - gs->player.info.position.x,
 				gs->ball.info.position.y - gs->player.info.position.y,
