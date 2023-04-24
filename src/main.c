@@ -219,7 +219,8 @@ int main(int argc, char** argv)
 	GameState gs;
 	gs.player = (Player){
 		(Info){0, 0, 0.5, 0.35, 0, 0.35},
-		(Color){0, 0, 1}
+		(Color){0, 0, 1},
+		5
 	};
 
 	gs.ball = (Ball){
@@ -296,8 +297,13 @@ int main(int argc, char** argv)
 		if (intersectRect(gs.ball.info, gs.player.info)) {
 			gs.ball.direction.y = fabs(gs.ball.direction.y);
 			printf("player\n");
-		} else if (gs.ball.info.position.y <= gs.ball.info.position.y) {
-			// vie--;
+		} else if (gs.ball.info.position.y <= gs.player.info.position.y) {
+			gs.player.hp--;
+			glPushMatrix();
+				glTranslatef(0, -gs.player.info.position.y, 0);
+				drawBall(&gs.ball);
+				drawPlayer(&gs.player);
+			glPopMatrix();
 		}
 		
 		for (int i = 0; i < gs.level.walls_count; i++) {

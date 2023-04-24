@@ -33,6 +33,7 @@ typedef struct {
 typedef struct {
     Info info;
     Color color;
+    int hp;
 } Player;
 
 typedef struct {

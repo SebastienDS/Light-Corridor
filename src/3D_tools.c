@@ -65,3 +65,61 @@ void drawCone() {
 void drawSphere() {
 	gluSphere(gluNewQuadric(),1.0,NB_SEG_CIRCLE,NB_SEG_CIRCLE);
 }
+
+void drawPyramid() {
+	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+	glPushMatrix();
+		glRotatef(90, 1, 0, 0);
+		glBegin(GL_TRIANGLES);
+		glVertex3f( 0.0f, 1.0f, 0.0f);
+		glVertex3f(-1.0f,-1.0f, 1.0f);
+		glVertex3f( 1.0f,-1.0f, 1.0f);
+
+		glVertex3f( 0.0f, 1.0f, 0.0f);
+		glVertex3f( 1.0f,-1.0f, 1.0f);
+		glVertex3f( 1.0f,-1.0f,-1.0f);
+
+		glVertex3f( 0.0f, 1.0f, 0.0f);
+		glVertex3f( 1.0f,-1.0f,-1.0f);
+		glVertex3f(-1.0f,-1.0f,-1.0f);
+
+		glVertex3f( 0.0f, 1.0f, 0.0f);
+		glVertex3f(-1.0f,-1.0f,-1.0f);
+		glVertex3f(-1.0f,-1.0f, 1.0f);
+		glEnd();
+	glPopMatrix();
+
+}
+
+void drawLosange() {
+	glPushMatrix();
+		drawPyramid();
+		glRotatef(180, 1, 0, 0);
+		glTranslatef(0.0f, 0.0f, 2.0f);
+		drawPyramid();
+	glPopMatrix();
+}
+
+void drawCube() {
+	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+	drawSquare();
+	glPushMatrix();
+		glTranslatef(0.0f, 0.0f, 1.0f);
+		drawSquare();
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90, 0, 1, 0);
+		glTranslatef(-0.5f, 0.0f, 0.5f);
+		drawSquare();
+		glTranslatef(0.0f, 0.0f, -1.0f);
+		drawSquare();
+	glPopMatrix();
+	glPushMatrix();
+		glColor3f(0.5, 0.0, 0.5);
+		glRotatef(90, 1, 0, 0);
+		glTranslatef(0.0f, 0.5f, -0.5f);
+		drawSquare();
+		glTranslatef(0.0f, 0.0f, 1.0f);
+		drawSquare();
+	glPopMatrix();
+}
