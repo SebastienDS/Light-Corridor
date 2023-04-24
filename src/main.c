@@ -23,8 +23,12 @@ static const double FRAMERATE_IN_SECONDS = 1. / 30.;
 static bool flagTransitions = false;
 
 static int currentDirection = 0;
+static Vec playerDirection = {0, 0, 0};
 
 static GameState gs;
+
+static const float PLAYER_SPEED = 0.05;
+static const float BALL_SPEED = 0.1;
 
 
 /* Error handling function */
@@ -73,18 +77,16 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 				printf("Zoom is %f\n",dist_zoom);
 				break;
 			case GLFW_KEY_UP :
-				if (phy>2) phy -= 2;
-				printf("Phy %f\n",phy);
+				playerDirection.z += 1;
 				break;
 			case GLFW_KEY_DOWN :
-				if (phy<=88.) phy += 2;
-				printf("Phy %f\n",phy);
+				playerDirection.z -= 1;
 				break;
 			case GLFW_KEY_LEFT :
-				theta -= 5;
+				playerDirection.x -= 1;
 				break;
 			case GLFW_KEY_RIGHT :
-				theta += 5;
+				playerDirection.x += 1;
 				break;
 			case GLFW_KEY_W:
 				currentDirection = 1;
@@ -99,6 +101,14 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 			case GLFW_KEY_W:
 			case GLFW_KEY_S:
 				currentDirection = 0;
+				break;
+			case GLFW_KEY_UP:
+			case GLFW_KEY_DOWN:
+				playerDirection.z = 0;
+				break;
+			case GLFW_KEY_LEFT:
+			case GLFW_KEY_RIGHT:
+				playerDirection.x = 0;
 				break;
 		}
 	}
@@ -198,8 +208,8 @@ GameState createGameState() {
 		},
 		(Ball){
 			(Info){0, 0.5, 0.5, 0.2, 0.2, 0.2},
-			(Vec){0.02, 0.02, 0.02},
-			1,
+			(Vec){0, 1, 0},
+			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
 		createLevel1(),
@@ -285,14 +295,28 @@ void update(GameState* gs) {
 	} else if (intersectCorridorZ(gs->ball.info)) {
 		gs->ball.direction.z *= -1;
 	}
-	if (intersectRect(gs->ball.info, gs->player.info)) {
-		gs->ball.direction.y = fabs(gs->ball.direction.y);
-	} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
-		gs->player.hp--;
-		gs->set_ball_on_player = true;
 
-		gs->ball.direction.y = fabs(gs->ball.direction.y);
+	if (!gs->set_ball_on_player) {
+		if (intersectRect(gs->ball.info, gs->player.info)) {
+			Vec bounce = {
+				gs->ball.info.position.x - gs->player.info.position.x,
+				gs->ball.info.position.y - gs->player.info.position.y,
+				gs->ball.info.position.z - gs->player.info.position.z
+			};
+			float newMagnitude = normalizeVec(&bounce);
+			if (newMagnitude <= 0) {
+				bounce = (Vec){0, 1, 0};
+			}
+			printf("%f %f %f \n", bounce.x, bounce.y, bounce.z);
+			gs->ball.direction = bounce;
+		} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
+			gs->player.hp--;
+			gs->set_ball_on_player = true;
+
+			gs->ball.direction = (Vec){0, 1, 0};
+		}
 	}
+	
 	
 	for (int i = 0; i < gs->level.walls_count; i++) {
 		if (intersectRect(gs->ball.info, gs->level.walls[i].info)) {
@@ -300,14 +324,20 @@ void update(GameState* gs) {
 		}
 	}
 
-	gs->player.info.position.y += currentDirection * 0.1;
+	gs->player.info.position.y += currentDirection * PLAYER_SPEED;
+
+	gs->player.info.position.x += playerDirection.x * 0.01;
+	gs->player.info.position.z += playerDirection.z * 0.01;
+
 
 	if (gs->set_ball_on_player) {
-		gs->ball.info.position = gs->player.info.position;
+		gs->ball.info.position.x = gs->player.info.position.x;
+		gs->ball.info.position.y = gs->player.info.position.y;
+		gs->ball.info.position.z = gs->player.info.position.z;
 	} else {
-		gs->ball.info.position.x += gs->ball.direction.x;
-		gs->ball.info.position.y += gs->ball.direction.y;
-		gs->ball.info.position.z += gs->ball.direction.z;
+		gs->ball.info.position.x += gs->ball.direction.x * gs->ball.speed;
+		gs->ball.info.position.y += gs->ball.direction.y * gs->ball.speed;
+		gs->ball.info.position.z += gs->ball.direction.z * gs->ball.speed;
 	}
 
 	if (flagTransitions) {
@@ -383,11 +413,6 @@ int main(int argc, char** argv)
 		
 		update(&gs);
 		draw(&gs);
-
-
-		printf("Score : %f\n", gs.player.info.position.y * 100);
-		printf("Vie : %d\n", gs.player.hp);
-
 
 
 		/* Swap front and back buffers */

@@ -81,3 +81,5 @@ Transition createMovementTransition(Vec step, int from, int to, int current);
 Transition createScalingTransition(Vec step, int from, int to, int current);
 
 void applyTransition(Info* info, Transition* transition);
+
+float normalizeVec(Vec* vec);
