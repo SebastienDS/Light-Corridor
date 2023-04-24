@@ -24,6 +24,8 @@ static bool flagTransitions = false;
 
 static int currentDirection = 0;
 
+static GameState gs;
+
 
 /* Error handling function */
 void onError(int error, const char* description)
@@ -58,6 +60,9 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 				break;
 			case GLFW_KEY_T :
 				flagTransitions = !flagTransitions;
+				break;
+			case GLFW_KEY_R :
+				gs.set_ball_on_player = false;
 				break;
 			case GLFW_KEY_KP_9 :
 				if(dist_zoom<100.0f) dist_zoom*=1.1;
@@ -137,7 +142,6 @@ bool intersectCorridorZ(Info ball) {
 	return ball.position.z - ball.size.z / 2 <= 0 || ball.position.z + ball.size.z / 2 >= 1;
 }
 
-
 Level createLevel1() {
 	Level level;
 	level.distance = 10;
@@ -185,6 +189,134 @@ Level createLevel1() {
 	return level;
 }
 
+GameState createGameState() {
+	return (GameState){
+		(Player){
+			(Info){0, 0, 0.5, 0.35, 0, 0.35},
+			(Color){0, 0, 1},
+			5
+		},
+		(Ball){
+			(Info){0, 0.5, 0.5, 0.2, 0.2, 0.2},
+			(Vec){0.02, 0.02, 0.02},
+			1,
+			(Color){0, 1, 0}
+		},
+		createLevel1(),
+		true
+	};
+}
+
+void drawShadow() {
+	glPushMatrix();
+		glTranslatef(0, 4.5, 0);
+		glScalef(2, 1, 1);
+		glColor4f(0, 0, 0, 1);
+		glRotatef(-90, 1, 0, 0);
+		glTranslatef(0, -0.5, 0);
+		glScalef(0.99, 0.99, 0.99);
+		drawFilledSquare();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0, 3, 0);
+		glScalef(2, 1, 1);
+		glColor4f(0, 0, 0, 0.5);
+		glRotatef(-90, 1, 0, 0);
+		glTranslatef(0, -0.5, 0);
+		glScalef(0.99, 0.99, 0.99);
+		drawFilledSquare();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0, 2, 0);
+		glScalef(2, 1, 1);
+		glColor4f(0, 0, 0, 0.25);
+		glRotatef(-90, 1, 0, 0);
+		glTranslatef(0, -0.5, 0);
+		glScalef(0.99, 0.99, 0.99);
+		drawFilledSquare();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0, 1.5, 0);
+		glScalef(2, 1, 1);
+		glColor4f(0, 0, 0, 0.1);
+		glRotatef(-90, 1, 0, 0);
+		glTranslatef(0, -0.5, 0);
+		glScalef(0.99, 0.99, 0.99);
+		drawFilledSquare();
+	glPopMatrix();
+}
+
+void draw(GameState* gs) {
+	Color corridorColor = {0.4, 0.4, 0.4};
+	glPushMatrix();
+		float position = gs->player.info.position.y - (int)gs->player.info.position.y;
+
+		glTranslatef(0, 0.5 - position, 0);
+
+		for (int i = 0; i < 5; i++) {
+			drawCorridorPart(corridorColor);
+			drawSeparator();
+
+			glTranslatef(0, 1, 0);
+		}
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0, -gs->player.info.position.y, 0);
+
+		drawBall(&gs->ball);
+
+		for (int i = gs->level.walls_count - 1; i >= 0; i--) {
+			drawWall(&gs->level.walls[i]);
+		}
+
+		drawPlayer(&gs->player);
+	glPopMatrix();
+
+	drawShadow();
+}
+
+void update(GameState* gs) {
+	if (intersectCorridorX(gs->ball.info)) {
+		gs->ball.direction.x *= -1;
+	} else if (intersectCorridorZ(gs->ball.info)) {
+		gs->ball.direction.z *= -1;
+	}
+	if (intersectRect(gs->ball.info, gs->player.info)) {
+		gs->ball.direction.y = fabs(gs->ball.direction.y);
+	} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
+		gs->player.hp--;
+		gs->set_ball_on_player = true;
+
+		gs->ball.direction.y = fabs(gs->ball.direction.y);
+	}
+	
+	for (int i = 0; i < gs->level.walls_count; i++) {
+		if (intersectRect(gs->ball.info, gs->level.walls[i].info)) {
+			gs->ball.direction.y *= -1;
+		}
+	}
+
+	gs->player.info.position.y += currentDirection * 0.1;
+
+	if (gs->set_ball_on_player) {
+		gs->ball.info.position = gs->player.info.position;
+	} else {
+		gs->ball.info.position.x += gs->ball.direction.x;
+		gs->ball.info.position.y += gs->ball.direction.y;
+		gs->ball.info.position.z += gs->ball.direction.z;
+	}
+
+	if (flagTransitions) {
+		for (int i = 0; i < gs->level.walls_count; i++) {
+			applyTransition(&gs->level.walls[i].info, &gs->level.walls[i].transition);
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
 	/* GLFW initialisation */
@@ -216,21 +348,8 @@ int main(int argc, char** argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_BLEND );
 
-	GameState gs;
-	gs.player = (Player){
-		(Info){0, 0, 0.5, 0.35, 0, 0.35},
-		(Color){0, 0, 1},
-		5
-	};
 
-	gs.ball = (Ball){
-		(Info){0, 0.5, 0.5, 0.2, 0.2, 0.2},
-		(Vec){0.02, 0.02, 0.02},
-		1,
-		(Color){0, 1, 0}
-	};
-
-	gs.level = createLevel1();
+	gs = createGameState();
 
 
 	/* Loop until the user closes the window */
@@ -261,114 +380,14 @@ int main(int argc, char** argv)
 		glPopMatrix();
 
 		/* Scene rendering */
-		Color corridorColor = {0.4, 0.4, 0.4};
-		glPushMatrix();
-			float position = gs.player.info.position.y - (int)gs.player.info.position.y;
-
-			glTranslatef(0, 0.5 - position, 0);
-
-			for (int i = 0; i < 5; i++) {
-				drawCorridorPart(corridorColor);
-				drawSeparator();
-
-				glTranslatef(0, 1, 0);
-			}
-		glPopMatrix();
-
-
-		glPushMatrix();
-			glTranslatef(0, -gs.player.info.position.y, 0);
-
-			drawBall(&gs.ball);
-
-			for (int i = gs.level.walls_count - 1; i >= 0; i--) {
-				drawWall(&gs.level.walls[i]);
-			}
-
-			drawPlayer(&gs.player);
-		glPopMatrix();
-
-
-		if (intersectCorridorX(gs.ball.info)) {
-			gs.ball.direction.x *= -1;
-		} else if (intersectCorridorZ(gs.ball.info)) {
-			gs.ball.direction.z *= -1;
-		}
-		if (intersectRect(gs.ball.info, gs.player.info)) {
-			gs.ball.direction.y = fabs(gs.ball.direction.y);
-			printf("player\n");
-		} else if (gs.ball.info.position.y <= gs.player.info.position.y) {
-			gs.player.hp--;
-			glPushMatrix();
-				glTranslatef(0, -gs.player.info.position.y, 0);
-				drawBall(&gs.ball);
-				drawPlayer(&gs.player);
-			glPopMatrix();
-		}
 		
-		for (int i = 0; i < gs.level.walls_count; i++) {
-			if (intersectRect(gs.ball.info, gs.level.walls[i].info)) {
-				gs.ball.direction.y *= -1;
-			}
-		}
+		update(&gs);
+		draw(&gs);
 
-
-		gs.player.info.position.y += currentDirection * 0.1;
-
-		gs.ball.info.position.x += gs.ball.direction.x;
-		gs.ball.info.position.y += gs.ball.direction.y;
-		gs.ball.info.position.z += gs.ball.direction.z;
-
-		if (flagTransitions) {
-			for (int i = 0; i < gs.level.walls_count; i++) {
-				applyTransition(&gs.level.walls[i].info, &gs.level.walls[i].transition);
-			}
-		}
 
 		printf("Score : %f\n", gs.player.info.position.y * 100);
+		printf("Vie : %d\n", gs.player.hp);
 
-
-		// shadow
-		glPushMatrix();
-			glTranslatef(0, 4.5, 0);
-			glScalef(2, 1, 1);
-			glColor4f(0, 0, 0, 1);
-			glRotatef(-90, 1, 0, 0);
-			glTranslatef(0, -0.5, 0);
-			glScalef(0.99, 0.99, 0.99);
-			drawFilledSquare();
-		glPopMatrix();
-
-		glPushMatrix();
-			glTranslatef(0, 3, 0);
-			glScalef(2, 1, 1);
-			glColor4f(0, 0, 0, 0.5);
-			glRotatef(-90, 1, 0, 0);
-			glTranslatef(0, -0.5, 0);
-			glScalef(0.99, 0.99, 0.99);
-			drawFilledSquare();
-		glPopMatrix();
-
-		glPushMatrix();
-			glTranslatef(0, 2, 0);
-			glScalef(2, 1, 1);
-			glColor4f(0, 0, 0, 0.25);
-			glRotatef(-90, 1, 0, 0);
-			glTranslatef(0, -0.5, 0);
-			glScalef(0.99, 0.99, 0.99);
-			drawFilledSquare();
-		glPopMatrix();
-
-		glPushMatrix();
-			glTranslatef(0, 1.5, 0);
-			glScalef(2, 1, 1);
-			glColor4f(0, 0, 0, 0.1);
-			glRotatef(-90, 1, 0, 0);
-			glTranslatef(0, -0.5, 0);
-			glScalef(0.99, 0.99, 0.99);
-			drawFilledSquare();
-		glPopMatrix();
-		
 
 
 		/* Swap front and back buffers */

@@ -72,6 +72,7 @@ typedef struct {
     Player player;
     Ball ball;
     Level level;
+    bool set_ball_on_player;
 } GameState;
 
 
