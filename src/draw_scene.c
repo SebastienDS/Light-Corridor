@@ -57,7 +57,7 @@ void drawSeparator() {
 
 void drawWall(Wall* wall) {
     glPushMatrix();
-        glColor4f(wall->color.r, wall->color.g, wall->color.b, 0.8);
+        glColor3f(wall->color.r, wall->color.g, wall->color.b);
         glTranslatef(wall->info.position.x, wall->info.position.y, wall->info.position.z);
         glRotatef(90, 1, 0, 0);
         glScalef(wall->info.size.x, wall->info.size.z, 1);
