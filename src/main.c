@@ -29,7 +29,7 @@ static GameState gs;
 
 static const float BALL_SPEED = 0.05;
 static const float PLAYER_SPEED = 0.025;
-
+static const int PLAYER_BASE_HP = 5;
 
 /* Error handling function */
 void onError(int error, const char* description)
@@ -152,6 +152,10 @@ bool intersectCorridorZ(Info ball) {
 	return ball.position.z - ball.size.z / 2 <= 0 || ball.position.z + ball.size.z / 2 >= 1;
 }
 
+bool collisionWithBonus(Player player, Bonus bonus) {
+	return intersectRect(player.info, bonus.info);
+}
+
 Level createLevel1() {
 	Level level;
 	level.distance = 10;
@@ -213,6 +217,7 @@ GameState createGameState() {
 			(Color){0, 1, 0}
 		},
 		createLevel1(),
+		true,
 		true
 	};
 }
@@ -296,24 +301,40 @@ void update(GameState* gs) {
 		gs->ball.direction.z *= -1;
 	}
 
+	for (int i = 0; i < gs->level.bonus_count; i++) {
+		if (collisionWithBonus(gs->player, gs->level.bonus[i])) {
+			BonusType type = gs->level.bonus[i].type;
+			if (type == HEAL && gs->player.hp < PLAYER_BASE_HP) {
+				gs->player.hp++;
+			}
+			if (type == MAGNET) {
+				gs->set_ball_on_player_on_the_next_collision = true;
+			}
+		}
+	}
+
 	if (!gs->set_ball_on_player) {
 		if (intersectRect(gs->ball.info, gs->player.info)) {
-			gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
-			Vec bounce = {
-				gs->ball.info.position.x - gs->player.info.position.x,
-				gs->ball.info.position.y - gs->player.info.position.y,
-				gs->ball.info.position.z - gs->player.info.position.z
-			};
-			float newMagnitude = normalizeVec(&bounce);
-			if (newMagnitude <= 0) {
-				bounce = (Vec){0, 1, 0};
+			if (gs->set_ball_on_player_on_the_next_collision) {
+				gs->set_ball_on_player = true;
 			}
-			printf("%f %f %f \n", bounce.x, bounce.y, bounce.z);
-			gs->ball.direction = bounce;
+			else {
+				gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
+				Vec bounce = {
+					gs->ball.info.position.x - gs->player.info.position.x,
+					gs->ball.info.position.y - gs->player.info.position.y,
+					gs->ball.info.position.z - gs->player.info.position.z
+				};
+				float newMagnitude = normalizeVec(&bounce);
+				if (newMagnitude <= 0) {
+					bounce = (Vec){0, 1, 0};
+				}
+				printf("%f %f %f \n", bounce.x, bounce.y, bounce.z);
+				gs->ball.direction = bounce;
+			}
 		} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
 			gs->player.hp--;
 			gs->set_ball_on_player = true;
-
 			gs->ball.direction = (Vec){0, 1, 0};
 		}
 	}
@@ -329,6 +350,8 @@ void update(GameState* gs) {
 
 	gs->player.info.position.x += playerDirection.x * 0.01;
 	gs->player.info.position.z += playerDirection.z * 0.01;
+	gs->set_ball_on_player_on_the_next_collision = false;
+
 
 
 	if (gs->set_ball_on_player) {

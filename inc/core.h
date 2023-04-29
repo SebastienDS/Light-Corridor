@@ -65,7 +65,9 @@ typedef struct {
 typedef struct {
     int distance;
     int walls_count;
+    int bonus_count;
     Wall* walls;
+    Bonus* bonus;
 } Level;
 
 typedef struct {
@@ -73,7 +75,17 @@ typedef struct {
     Ball ball;
     Level level;
     bool set_ball_on_player;
+    bool set_ball_on_player_on_the_next_collision;
 } GameState;
+
+typedef enum {
+    HEAL, MAGNET
+} BonusType;
+
+typedef struct {
+    BonusType type;
+    Info info;
+} Bonus;
 
 
 Transition createNoTransition();
