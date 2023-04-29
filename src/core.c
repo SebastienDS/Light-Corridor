@@ -1,6 +1,12 @@
 #include "core.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+
+int randint(int min, int max) {
+    return rand() % (1 + max - min) + min;
+}
 
 float magnitude(Vec* vec) {
     return sqrt(vec->x * vec->x + vec->y * vec->y + vec->z * vec->z);
@@ -45,7 +51,7 @@ void setTemplateWallTopLeftBottomRight(Template* template) {
 
 Templates getTemplates() {
     Templates templates;
-    templates.count = 10;
+    templates.count = 2;
     templates.templates = malloc(templates.count * sizeof(Template));
 	REQUIRE_NON_NULL(templates.templates);
 
@@ -66,7 +72,9 @@ Level createLevel(int distance) {
 	REQUIRE_NON_NULL(level.walls);
 
     for (int i = 1; i < distance; i += 2) {
-        Template* template = &templates.templates[0];
+        Template* template = &templates.templates[randint(0, templates.count - 1)];
+        Color color = (Color){randint(0, 255) / 255.f, randint(0, 255) / 255.f, randint(0, 255) / 255.f};
+
         for (int j = 0; j < template->count; j++) {
             if (level.walls_count >= capacity) {
                 capacity *= 2;
@@ -75,7 +83,7 @@ Level createLevel(int distance) {
             }
 
             level.walls[level.walls_count] = template->walls[j];
-            level.walls[level.walls_count].color = (Color){0.5, 0.5, 0.5};
+            level.walls[level.walls_count].color = color;
             level.walls[level.walls_count].info.position.y = i;
             level.walls_count++;
         }

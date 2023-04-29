@@ -4,6 +4,7 @@
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdbool.h>
 #include <math.h>
 #include "3D_tools.h"
@@ -331,6 +332,8 @@ int main(int argc, char** argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable( GL_BLEND );
 
+
+	srand(time(NULL));
 
 	gs = createGameState();
 
