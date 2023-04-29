@@ -4,6 +4,7 @@
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdbool.h>
 #include <math.h>
 #include "3D_tools.h"
@@ -20,7 +21,7 @@ static float aspectRatio = 1.0;
 static const double FRAMERATE_IN_SECONDS = 1. / 30.;
 
 /* IHM flag */
-static bool flagTransitions = false;
+static bool flagTransitions = true;
 
 static int currentDirection = 0;
 static Vec playerDirection = {0, 0, 0};
@@ -156,68 +157,20 @@ bool collisionWithBonus(Player player, Bonus bonus) {
 	return intersectRect(player.info, bonus.info);
 }
 
-Level createLevel1() {
-	Level level;
-	level.distance = 10;
-	level.walls_count = 7;
-	level.walls = malloc(level.walls_count * sizeof(Wall));
-	REQUIRE_NON_NULL(level.walls);
-
-	
-	level.walls[0] = (Wall) {
-		(Info){-0.75, 1, 0.75, 0.5, 0, 0.5},
-		(Color){1, 0.4, 0.5},
-		createMovementTransition((Vec){0, 0, -0.01}, -25, 25, -25)
-	};
-	level.walls[1] = (Wall) {
-		(Info){0.75, 1, 0.25, 0.5, 0, 0.5},
-		(Color){1, 0.4, 0.5},
-		createMovementTransition((Vec){0, 0, 0.01}, -25, 25, -25)
-	};
-	level.walls[2] = (Wall) {
-		(Info){-0.75, 3, 0.5, 0.5, 0, 1},
-		(Color){0.5, 0.5, 0.5},
-		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, 25)
-	};
-	level.walls[3] = (Wall) {
-		(Info){0.75, 3, 0.5, 0.5, 0, 1},
-		(Color){0.5, 0.5, 0.5},
-		createMovementTransition((Vec){0.01, 0, 0}, -25, 25, -25)
-	};
-	level.walls[4] = (Wall) {
-		(Info){0, 5, 0.5, 0.5, 0, 1},
-		(Color){1, 0, 0},
-		createMovementTransition((Vec){0.01, 0, 0}, -75, 75, 0)
-	};
-	level.walls[5] = (Wall) {
-		(Info){0, 7, 0.5, 2, 0, 1},
-		(Color){0, 0, 1},
-		createScalingTransition((Vec){0.025, 0, 0.01}, -30, 30, 30)
-	};
-	level.walls[6] = (Wall) {
-		(Info){0, 9, 0.5, 2, 0, 1},
-		(Color){0.5, 0.5, 1},
-		createNoTransition()
-	};
-
-	return level;
-}
-
 GameState createGameState() {
 	return (GameState){
 		(Player){
-			(Info){0, 0, 0.5, 0.35, 0, 0.35},
+			(Info){{0, 0, 0.5}, {0.35, 0, 0.35}},
 			(Color){0, 0, 1},
 			5
 		},
 		(Ball){
-			(Info){0, 0.5, 0.5, 0.2, 0.2, 0.2},
+			(Info){{0, 0.5, 0.5}, {0.2, 0.2, 0.2}},
 			(Vec){0, 1, 0},
 			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
-		createLevel1(),
-		true,
+		createLevel(200 + 1),
 		true
 	};
 }
@@ -315,23 +268,18 @@ void update(GameState* gs) {
 
 	if (!gs->set_ball_on_player) {
 		if (intersectRect(gs->ball.info, gs->player.info)) {
-			if (gs->set_ball_on_player_on_the_next_collision) {
-				gs->set_ball_on_player = true;
+			gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
+			Vec bounce = {
+				gs->ball.info.position.x - gs->player.info.position.x,
+				gs->ball.info.position.y - gs->player.info.position.y,
+				gs->ball.info.position.z - gs->player.info.position.z
+			};
+			float newMagnitude = normalizeVec(&bounce);
+			if (newMagnitude <= 0) {
+				bounce = (Vec){0, 1, 0};
 			}
-			else {
-				gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
-				Vec bounce = {
-					gs->ball.info.position.x - gs->player.info.position.x,
-					gs->ball.info.position.y - gs->player.info.position.y,
-					gs->ball.info.position.z - gs->player.info.position.z
-				};
-				float newMagnitude = normalizeVec(&bounce);
-				if (newMagnitude <= 0) {
-					bounce = (Vec){0, 1, 0};
-				}
-				printf("%f %f %f \n", bounce.x, bounce.y, bounce.z);
-				gs->ball.direction = bounce;
-			}
+			printf("%f %f %f \n", bounce.x, bounce.y, bounce.z);
+			gs->ball.direction = bounce;
 		} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
 			gs->player.hp--;
 			gs->set_ball_on_player = true;
@@ -403,6 +351,8 @@ int main(int argc, char** argv)
 	glEnable( GL_BLEND );
 
 
+	srand(time(NULL));
+
 	gs = createGameState();
 
 
@@ -455,6 +405,8 @@ int main(int argc, char** argv)
 
 		/* Animate scenery */
 	}
+
+	free(gs.level.walls);
 
 	glfwTerminate();
 	return 0;

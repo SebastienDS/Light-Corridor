@@ -87,6 +87,15 @@ typedef struct {
     Info info;
 } Bonus;
 
+typedef struct {
+    int count;
+    Wall* walls;
+} Template;
+
+typedef struct {
+    int count;
+    Template* templates;
+} Templates;
 
 Transition createNoTransition();
 Transition createMovementTransition(Vec step, int from, int to, int current);
@@ -95,3 +104,5 @@ Transition createScalingTransition(Vec step, int from, int to, int current);
 void applyTransition(Info* info, Transition* transition);
 
 float normalizeVec(Vec* vec);
+
+Level createLevel(int distance);
