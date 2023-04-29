@@ -75,16 +75,25 @@ Level createLevel(int distance) {
         Template* template = &templates.templates[randint(0, templates.count - 1)];
         Color color = (Color){randint(0, 255) / 255.f, randint(0, 255) / 255.f, randint(0, 255) / 255.f};
 
+        Transition* transition = &template->walls[0].transition;
+        int transition_index = 2 * randint(0, 1 + transition->to - transition->from);
+
         for (int j = 0; j < template->count; j++) {
             if (level.walls_count >= capacity) {
                 capacity *= 2;
                 level.walls = realloc(level.walls, capacity * sizeof(Wall));
 	            REQUIRE_NON_NULL(level.walls);
             }
+            Wall* wall = &level.walls[level.walls_count];
 
-            level.walls[level.walls_count] = template->walls[j];
-            level.walls[level.walls_count].color = color;
-            level.walls[level.walls_count].info.position.y = i;
+            *wall = template->walls[j];
+            wall->color = color;
+            wall->info.position.y = i;
+
+            for (int step = 0; step < transition_index; step++) {
+                applyTransition(&wall->info, &wall->transition);
+            }
+
             level.walls_count++;
         }
     }

@@ -166,7 +166,7 @@ GameState createGameState() {
 			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
-		createLevel(5 + 1),
+		createLevel(15 + 1),
 		true
 	};
 }
