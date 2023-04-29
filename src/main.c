@@ -156,7 +156,7 @@ bool intersectCorridorZ(Info ball) {
 GameState createGameState() {
 	return (GameState){
 		(Player){
-			(Info){{0, 0, 0.5}, {0.35, 0, 0.35}},
+			(Info){{0, 0, 0.5}, {0.25, 0, 0.25}},
 			(Color){0, 0, 1},
 			5
 		},
@@ -166,7 +166,7 @@ GameState createGameState() {
 			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
-		createLevel(15 + 1),
+		createLevel(200 + 1),
 		true
 	};
 }
@@ -380,9 +380,9 @@ int main(int argc, char** argv)
 		/* Elapsed time computation from loop begining */
 		double elapsedTime = glfwGetTime() - startTime;
 		/* If to few time is spend vs our wanted FPS, we wait */
-		if(elapsedTime < FRAMERATE_IN_SECONDS)
+		if(elapsedTime < FRAMERATE_IN_SECONDS / 2)
 		{
-			glfwWaitEventsTimeout(FRAMERATE_IN_SECONDS-elapsedTime);
+			glfwWaitEventsTimeout(FRAMERATE_IN_SECONDS / 2 - elapsedTime);
 		}
 
 		/* Animate scenery */
