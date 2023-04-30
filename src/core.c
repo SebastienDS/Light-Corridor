@@ -255,8 +255,8 @@ Level createLevel(int distance, int distanceBetween2Bonus) {
     for (int y = distanceBetween2Bonus; y < distance; y += distanceBetween2Bonus) {
         Bonus* bonus = &level.bonus[level.bonus_count];
 
-        int bonus_type = randint(0, 1);
-        bonus->type = bonus_type;
+        int bonus_type = randint(0, 22);
+        bonus->type = bonus_type < 10 ? 0 : bonus_type < 20 ? 1 : 2;
         int pos = randint(0, 2);
         float position = pos == 0 ? 0 : pos == 1 ? -0.5 : 0.5;
         bonus->info = (Info){{position, y + 0.5, 0.5}, {0.25, 0.25, 0.25}};

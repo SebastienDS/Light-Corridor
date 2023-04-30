@@ -108,7 +108,9 @@ void drawBonus(Bonus* bonus) {
 		} else if (bonus->type == MAGNET) {
 			glTranslatef(0, 0, 1);
 			drawLosange();
-		} else {
+		} else if (bonus->type == CLAIRVOYANCE) {
+			drawPyramid();
+        } else {
 			fprintf(stderr, "Unknown Bonus");
 			exit(1);
 		}

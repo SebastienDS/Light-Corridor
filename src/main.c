@@ -13,8 +13,8 @@
 #include "texture.h"
 
 /* Window properties */
-static const unsigned int WINDOW_WIDTH = 1000;
-static const unsigned int WINDOW_HEIGHT = 500;
+static unsigned int WINDOW_WIDTH = 1000;
+static unsigned int WINDOW_HEIGHT = 500;
 static const char WINDOW_TITLE[] = "Light Corridor";
 static float aspectRatio = 1.0;
 
@@ -28,10 +28,17 @@ static int currentDirection = 0;
 static bool playerDirection[4] = {false, false, false, false}; // top bottom left right
 
 static GameState gs;
+static State state;
+static bool gameAlreadyRunning = false;
+
 
 static const float BALL_SPEED = 0.05;
 static const float PLAYER_SPEED = 0.025;
 static const int PLAYER_BASE_HP = 5;
+static const int CLAIRVOYANCE_DURATION = 10;
+
+
+void setState(State* state, State newState, GLFWwindow* window);
 
 /* Error handling function */
 void onError(int error, const char* description)
@@ -48,14 +55,75 @@ void onWindowResized(GLFWwindow* window, int width, int height)
 	glLoadIdentity();
 	gluPerspective(60.0,aspectRatio,Z_NEAR,Z_FAR);
 	glMatrixMode(GL_MODELVIEW);
+
+	WINDOW_WIDTH = width;
+	WINDOW_HEIGHT = height;
 }
 
-void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
+double convertXPosition(double x) {
+	return x / (WINDOW_WIDTH / 2) - 1;
+}
+
+double convertYPosition(double y) {
+	return 1 - y / WINDOW_HEIGHT;
+}
+
+GameState createGameState() {
+	return (GameState){
+		(Player){
+			(Info){{0, 0, 0.5}, {0.25, 0.25, 0.25}},
+			(Color){0, 0, 1},
+			5
+		},
+		(Ball){
+			(Info){{0, 0.5, 0.5}, {0.2, 0.2, 0.2}},
+			(Vec){0, 1, 0},
+			BALL_SPEED,
+			(Color){0, 1, 0}
+		},
+		createLevel(1000 + 1, 5),
+		true,
+		false,
+		false,
+		0
+	};
+}
+
+void onKeyMenu(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (action == GLFW_PRESS) {
+		switch(key) {
+			case GLFW_KEY_ESCAPE:
+				glfwSetWindowShouldClose(window, GLFW_TRUE);
+				break;
+		}
+	}
+}
+
+void onClickMenu(GLFWwindow* window, int button, int action, int mods) {
+	if (action != GLFW_PRESS) return;
+
+	double x, y;
+	glfwGetCursorPos(window, &x, &y);
+	float a = convertXPosition(x);	
+	float b = convertYPosition(y);
+
+	if (a < -0.13 && a > -0.40 && b > 0.35 && b < 0.63) {
+		if (!gameAlreadyRunning) {
+			gs = createGameState();
+			gameAlreadyRunning = true;
+		}
+		setState(&state, IN_GAME, window);
+	} else if (a > 0.13 && a < 0.40 && b > 0.35 && b < 0.63) {
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	}
+}
+
+void onKeyInGame(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS) {
 		switch(key) {
 			case GLFW_KEY_ESCAPE :
-				glfwSetWindowShouldClose(window, GLFW_TRUE);
+				setState(&state, MENU, window);
 				break;
 			case GLFW_KEY_L :
 				glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
@@ -121,15 +189,7 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 	}
 }
 
-double convertXPosition(double x) {
-	return x / (WINDOW_WIDTH / 2) - 1;
-}
-
-double convertYPosition(double y) {
-	return 1 - y / WINDOW_HEIGHT;
-}
-
-void onClick(GLFWwindow* window, int button, int action, int mods)
+void onClickInGame(GLFWwindow* window, int button, int action, int mods)
 {
 	if (action == GLFW_PRESS) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT)
@@ -182,25 +242,6 @@ bool intersectCorridorZ(Info ball) {
 
 bool collisionWithBonus(Player player, Bonus bonus) {
 	return intersectRect(player.info, bonus.info);
-}
-
-GameState createGameState() {
-	return (GameState){
-		(Player){
-			(Info){{0, 0, 0.5}, {0.25, 0.25, 0.25}},
-			(Color){0, 0, 1},
-			5
-		},
-		(Ball){
-			(Info){{0, 0.5, 0.5}, {0.2, 0.2, 0.2}},
-			(Vec){0, 1, 0},
-			BALL_SPEED,
-			(Color){0, 1, 0}
-		},
-		createLevel(1000 + 1, 5),
-		true,
-		false
-	};
 }
 
 void drawShadow() {
@@ -268,12 +309,13 @@ void drawDigit(Texture* texture) {
 
 void draw(GameState* gs, Assets* assets) {
 	Color corridorColor = {0.4, 0.4, 0.4};
+
 	glPushMatrix();
 		float position = gs->player.info.position.y - (int)gs->player.info.position.y;
 
 		glTranslatef(0, 0.5 - position, 0);
 
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 50; i++) {
 			drawCorridorPart(corridorColor);
 			drawSeparator();
 
@@ -298,6 +340,16 @@ void draw(GameState* gs, Assets* assets) {
 
 		drawPlayer(&gs->player);
 	glPopMatrix();
+
+	if (gs->clairvoyance_active) {
+		glPushMatrix();
+			glRotatef(-90, 1, 0, 0);
+			glTranslatef(0, 0.5, 0);
+			glScalef(5, 5, 5);
+			glColor4f(0.3, 0.3, 0.3, 0.2);
+			drawFilledSquare();
+		glPopMatrix();
+	}
 
 	drawShadow();
 
@@ -366,6 +418,11 @@ void update(GameState* gs, GLFWwindow* window) {
 			gs->set_ball_on_player = true;
 			gs->ball.is_in_collision = false;
 			gs->ball.direction = (Vec){0, 1, 0};
+
+			if (gs->player.hp <= 0) {
+				setState(&state, MENU, window);
+				gameAlreadyRunning = false;
+			}
 		}
 	}
 	
@@ -428,6 +485,9 @@ void update(GameState* gs, GLFWwindow* window) {
 				gs->player.hp++;
 			} else if (bonus->type == MAGNET) {
 				gs->set_ball_on_player_on_the_next_collision = true;
+			} else if (bonus->type == CLAIRVOYANCE) {
+				gs->clairvoyance_active = true;
+				gs->clairvoyance_start = glfwGetTime();
 			}
 		}
 	}
@@ -436,6 +496,39 @@ void update(GameState* gs, GLFWwindow* window) {
 		if (gs->level.bonus[i].taken) continue;
 		drawBonus(&gs->level.bonus[i]);
 	}
+
+	if (gs->clairvoyance_active && glfwGetTime() - gs->clairvoyance_start > CLAIRVOYANCE_DURATION) {
+		gs->clairvoyance_active = false;
+	}
+}
+
+void drawMenu() {
+	glPushMatrix();
+		glColor3f(0, 1, 0);
+		glTranslatef(-0.25, 0, 0.5);
+		glScalef(0.25, 0.25, 0.25);
+		glRotatef(-90, 1, 0, 0);
+		drawFilledSquare();
+	glPopMatrix();
+
+	glPushMatrix();
+		glColor3f(1, 0, 0);
+		glTranslatef(0.25, 0, 0.5);
+		glScalef(0.25, 0.25, 0.25);
+		glRotatef(-90, 1, 0, 0);
+		drawFilledSquare();
+	glPopMatrix();
+}
+
+void setState(State* state, State newState, GLFWwindow* window) {
+	if (newState == MENU) {
+		glfwSetKeyCallback(window, onKeyMenu);
+		glfwSetMouseButtonCallback(window, onClickMenu);
+	} else if (newState == IN_GAME) {
+		glfwSetKeyCallback(window, onKeyInGame);
+		glfwSetMouseButtonCallback(window, onClickInGame);
+	}
+	*state = newState;
 }
 
 int main(int argc, char** argv)
@@ -459,9 +552,8 @@ int main(int argc, char** argv)
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
 
-	glfwSetWindowSizeCallback(window,onWindowResized);
-	glfwSetKeyCallback(window, onKey);
-	glfwSetMouseButtonCallback(window, onClick);
+	glfwSetWindowSizeCallback(window, onWindowResized);
+
 
 	onWindowResized(window,WINDOW_WIDTH,WINDOW_HEIGHT);
 
@@ -473,8 +565,9 @@ int main(int argc, char** argv)
 
 	srand(time(NULL));
 
-	gs = createGameState();
 	Assets assets = loadAssets();
+
+	setState(&state, MENU, window);
 
 
 	/* Loop until the user closes the window */
@@ -492,26 +585,17 @@ int main(int argc, char** argv)
 		glLoadIdentity();
 		setCamera();
 
-		/* Initial scenery setup */
-		glPushMatrix();
-		glTranslatef(0.0,0.0,-0.01);
-		glScalef(10.0,10.0,1.0);
-		glColor3f(0.0,0.0,0.1);
-		drawSquare();
-		glBegin(GL_POINTS);
-			glColor3f(1.0,1.0,0.0);
-			glVertex3f(0.0,0.0,0.0);
-		glEnd();
-		glPopMatrix();
 
 		/* Scene rendering */
-		
-		update(&gs, window);
-		draw(&gs, &assets);
 
+		if (state == IN_GAME) {
+			update(&gs, window);
+			draw(&gs, &assets);
 
-		printf("SCORE : %d - HP : %d\n", (int)gs.player.info.position.y * 100, gs.player.hp);
-
+			printf("SCORE : %d - HP : %d\n", (int)gs.player.info.position.y * 100, gs.player.hp);
+		} else if (state == MENU) {
+			drawMenu();
+		}
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);

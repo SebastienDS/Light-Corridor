@@ -13,6 +13,10 @@
     exit(-1); \
 }
 
+typedef enum {
+    IN_GAME, MENU
+} State;
+
 typedef struct {
     float x;
     float y;
@@ -64,7 +68,7 @@ typedef struct {
 } Wall;
 
 typedef enum {
-    HEAL, MAGNET
+    HEAL, MAGNET, CLAIRVOYANCE
 } BonusType;
 
 typedef struct {
@@ -88,6 +92,8 @@ typedef struct {
     Level level;
     bool set_ball_on_player;
     bool set_ball_on_player_on_the_next_collision;
+    bool clairvoyance_active;
+    double clairvoyance_start;
 } GameState;
 
 typedef struct {
