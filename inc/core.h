@@ -70,6 +70,8 @@ typedef enum {
 typedef struct {
     BonusType type;
     Info info;
+    bool taken;
+    int angle;
 } Bonus;
 
 typedef struct {
@@ -109,4 +111,4 @@ void applyTransition(Info* info, Transition* transition);
 
 float normalizeVec(Vec* vec);
 
-Level createLevel(int distance);
+Level createLevel(int distance, int distanceBetween2Bonus);

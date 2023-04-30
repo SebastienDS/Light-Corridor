@@ -31,3 +31,8 @@ void drawSphere();
 
 /* Small tools */
 float toRad(float deg);
+
+
+void drawPyramid();
+void drawLosange();
+void drawCube();

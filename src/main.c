@@ -25,7 +25,7 @@ static const double FRAMERATE_IN_SECONDS = 1. / 30.;
 static bool flagTransitions = true;
 
 static int currentDirection = 0;
-static Vec playerDirection = {0, 0, 0};
+static bool playerDirection[4] = {false, false, false, false}; // top bottom left right
 
 static GameState gs;
 
@@ -54,7 +54,6 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS) {
 		switch(key) {
-			case GLFW_KEY_A :
 			case GLFW_KEY_ESCAPE :
 				glfwSetWindowShouldClose(window, GLFW_TRUE);
 				break;
@@ -68,6 +67,7 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 				flagTransitions = !flagTransitions;
 				break;
 			case GLFW_KEY_R :
+			case GLFW_KEY_SPACE:
 				gs.set_ball_on_player = false;
 				break;
 			case GLFW_KEY_KP_9 :
@@ -78,41 +78,59 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 				if(dist_zoom>1.0f) dist_zoom*=0.9;
 				printf("Zoom is %f\n",dist_zoom);
 				break;
-			case GLFW_KEY_UP :
-				playerDirection.z += 1;
-				break;
-			case GLFW_KEY_DOWN :
-				playerDirection.z -= 1;
-				break;
-			case GLFW_KEY_LEFT :
-				playerDirection.x -= 1;
-				break;
-			case GLFW_KEY_RIGHT :
-				playerDirection.x += 1;
-				break;
-			case GLFW_KEY_W:
+			case GLFW_KEY_UP:
 				currentDirection = 1;
 				break;
-			case GLFW_KEY_S:
+			case GLFW_KEY_DOWN:
 				currentDirection = -1;
 				break;
+			case GLFW_KEY_W:
+				playerDirection[0] = true;
+				break;
+			case GLFW_KEY_S:
+				playerDirection[1] = true;
+				break;
+			case GLFW_KEY_A:
+				playerDirection[2] = true;
+				break;
+			case GLFW_KEY_D:
+				playerDirection[3] = true;
+				break;
+			
 			default: fprintf(stdout,"Touche non gérée (%d)\n",key);
 		}
 	} else if (action == GLFW_RELEASE) {
 		switch(key) {
-			case GLFW_KEY_W:
-			case GLFW_KEY_S:
-				currentDirection = 0;
-				break;
 			case GLFW_KEY_UP:
 			case GLFW_KEY_DOWN:
-				playerDirection.z = 0;
+				currentDirection = 0;
 				break;
-			case GLFW_KEY_LEFT:
-			case GLFW_KEY_RIGHT:
-				playerDirection.x = 0;
+			case GLFW_KEY_W:
+				playerDirection[0] = false;
+				break;
+			case GLFW_KEY_S:
+				playerDirection[1] = false;
+				break;
+			case GLFW_KEY_A:
+				playerDirection[2] = false;
+				break;
+			case GLFW_KEY_D:
+				playerDirection[3] = false;
 				break;
 		}
+	}
+}
+
+void onClick(GLFWwindow* window, int button, int action, int mods)
+{
+	if (action == GLFW_PRESS) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT)
+			currentDirection = 1;
+		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+			gs.set_ball_on_player = false;
+	} else if (action == GLFW_RELEASE) {
+		if (button == GLFW_MOUSE_BUTTON_LEFT)
+        	currentDirection = 0;
 	}
 }
 
@@ -161,7 +179,7 @@ bool collisionWithBonus(Player player, Bonus bonus) {
 GameState createGameState() {
 	return (GameState){
 		(Player){
-			(Info){{0, 0, 0.5}, {0.25, 0, 0.25}},
+			(Info){{0, 0, 0.5}, {0.25, 0.25, 0.25}},
 			(Color){0, 0, 1},
 			5
 		},
@@ -171,8 +189,9 @@ GameState createGameState() {
 			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
-		createLevel(200 + 1),
-		true
+		createLevel(200 + 1, 3),
+		true,
+		false
 	};
 }
 
@@ -224,19 +243,40 @@ void drawDigit(Texture* texture) {
 
 	glBegin(GL_QUADS);
 		glTexCoord2f(0, 0);
-		glVertex3f(-0.5, 0.5, 0.5);
+		glVertex2f(-0.5, 0.5);
 		
 		glTexCoord2f(1, 0);
-		glVertex3f(0.5, 0.5, 0.5);
+		glVertex2f(0.5, 0.5);
 		
 		glTexCoord2f(1, 1);
-		glVertex3f(0.5, -0.5, 0.5);
+		glVertex2f(0.5, -0.5);
 		
 		glTexCoord2f(0, 1);
-		glVertex3f(-0.5, -0.5, 0.5);
+		glVertex2f(-0.5, -0.5);
 	glEnd();
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glDisable(GL_TEXTURE_2D);
+}
+
+void drawBonus(Bonus* bonus) {
+	glPushMatrix();
+        glTranslatef(bonus->info.position.x, bonus->info.position.y, bonus->info.position.z);
+        glScalef(bonus->info.size.x / 2, bonus->info.size.y / 2, bonus->info.size.z / 2);
+		glRotatef(bonus->angle, 0, 0, 1);
+        glColor3f(1, 1, 1);
+
+		if (bonus->type == HEAL) {
+			glTranslatef(0, 0, -0.5);
+			drawCube();
+		} else if (bonus->type == MAGNET) {
+			glTranslatef(0, 0, 1);
+			drawLosange();
+		} else {
+			fprintf(stderr, "Unknown Bonus");
+			exit(1);
+		}
+    glPopMatrix();
+
 }
 
 void draw(GameState* gs, Assets* assets) {
@@ -263,16 +303,46 @@ void draw(GameState* gs, Assets* assets) {
 			drawWall(&gs->level.walls[i]);
 		}
 
+		for (int i = 0; i < gs->level.bonus_count; i++) {
+			if (gs->level.bonus[i].taken) continue;
+			drawBonus(&gs->level.bonus[i]);
+		}
+
 		drawPlayer(&gs->player);
 	glPopMatrix();
 
 	drawShadow();
 
-	glPushMatrix();
-		glRotatef(-90, 1, 0, 0);
-		drawDigit(&assets->digits[0]);
-	glPopMatrix();
+	// glPushMatrix();
+	// 	glTranslatef(0, 0.2, 0.2);
+	// 	drawDigit(&assets->digits[1]);
+	// glPopMatrix();
+}
 
+bool playerIntersectWall(GameState* gs) {
+	for (int i = 0; i < gs->level.walls_count; i++) {
+		if (intersectRect(gs->player.info, gs->level.walls[i].info)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool canPlayerAdvance(GameState* gs) {
+	return !gs->set_ball_on_player && !playerIntersectWall(gs);
+}
+
+void keepPlayerOnCorridor(Player* player) {
+	if (player->info.position.x < -0.8) {
+		player->info.position.x = -0.8;
+	} else if (player->info.position.x > 0.8) {
+		player->info.position.x = 0.8;
+	}
+	if (player->info.position.z > 0.85) {
+		player->info.position.z = 0.85;
+	} else if (player->info.position.z < 0.15) {
+		player->info.position.z = 0.15;
+	}
 }
 
 void update(GameState* gs) {
@@ -282,32 +352,27 @@ void update(GameState* gs) {
 		gs->ball.direction.z *= -1;
 	}
 
-	for (int i = 0; i < gs->level.bonus_count; i++) {
-		if (collisionWithBonus(gs->player, gs->level.bonus[i])) {
-			BonusType type = gs->level.bonus[i].type;
-			if (type == HEAL && gs->player.hp < PLAYER_BASE_HP) {
-				gs->player.hp++;
-			}
-			if (type == MAGNET) {
-				gs->set_ball_on_player_on_the_next_collision = true;
-			}
-		}
-	}
-
 	if (!gs->set_ball_on_player) {
 		if (intersectRect(gs->ball.info, gs->player.info)) {
-			gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
-			Vec bounce = {
-				gs->ball.info.position.x - gs->player.info.position.x,
-				gs->ball.info.position.y - gs->player.info.position.y,
-				gs->ball.info.position.z - gs->player.info.position.z
-			};
-			float newMagnitude = normalizeVec(&bounce);
-			if (newMagnitude <= 0) {
-				bounce = (Vec){0, 1, 0};
-			}
+			if (gs->set_ball_on_player_on_the_next_collision) {
+				gs->set_ball_on_player = true;
+				gs->set_ball_on_player_on_the_next_collision = false;
+				gs->ball.is_in_collision = false;
+				gs->ball.direction = (Vec){0, 1, 0};
+			} else {
+				gs->ball.info.position.y += fabs(gs->ball.direction.y) * gs->ball.speed;
+				Vec bounce = {
+					gs->ball.info.position.x - gs->player.info.position.x,
+					gs->ball.info.position.y - gs->player.info.position.y,
+					gs->ball.info.position.z - gs->player.info.position.z
+				};
+				float newMagnitude = normalizeVec(&bounce);
+				if (newMagnitude <= 0) {
+					bounce = (Vec){0, 1, 0};
+				}
 
-			gs->ball.direction = bounce;
+				gs->ball.direction = bounce;
+			}
 		} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
 			gs->player.hp--;
 			gs->set_ball_on_player = true;
@@ -330,13 +395,17 @@ void update(GameState* gs) {
 		gs->ball.is_in_collision = false;
 	}
 
-	gs->player.info.position.y += currentDirection * PLAYER_SPEED;
+	if (canPlayerAdvance(gs)) {
+		gs->player.info.position.y += currentDirection * PLAYER_SPEED;
+	}
 
-	gs->player.info.position.x += playerDirection.x * 0.01;
-	gs->player.info.position.z += playerDirection.z * 0.01;
-	gs->set_ball_on_player_on_the_next_collision = false;
+	int directionZ = playerDirection[0] - playerDirection[1];
+	int directionX = playerDirection[3] - playerDirection[2];
 
-
+	gs->player.info.position.x += directionX * 0.02;
+	gs->player.info.position.z += directionZ * 0.02;
+	
+	keepPlayerOnCorridor(&gs->player);
 
 	if (gs->set_ball_on_player) {
 		gs->ball.info.position.x = gs->player.info.position.x;
@@ -353,6 +422,30 @@ void update(GameState* gs) {
 			applyTransition(&gs->level.walls[i].info, &gs->level.walls[i].transition);
 		}
 	}
+
+	for (int i = 0; i < gs->level.bonus_count; i++) {
+		Bonus* bonus = &gs->level.bonus[i];
+		bonus->angle = (bonus->angle + 1) % 360;
+
+		if (intersectRect(gs->player.info, bonus->info)) {
+			if (bonus->taken) continue;
+			
+			bonus->taken = true;
+			if (bonus->type == HEAL && gs->player.hp < PLAYER_BASE_HP) {
+				gs->player.hp++;
+				printf("NEW HP");
+			} else if (bonus->type == MAGNET) {
+				gs->set_ball_on_player_on_the_next_collision = true;
+			}
+		}
+	}
+
+	for (int i = 0; i < gs->level.bonus_count; i++) {
+		if (gs->level.bonus[i].taken) continue;
+		drawBonus(&gs->level.bonus[i]);
+	}
+
+	printf("%d\n", gs->player.hp);
 }
 
 int main(int argc, char** argv)
@@ -378,13 +471,14 @@ int main(int argc, char** argv)
 
 	glfwSetWindowSizeCallback(window,onWindowResized);
 	glfwSetKeyCallback(window, onKey);
+	glfwSetMouseButtonCallback(window, onClick);
 
 	onWindowResized(window,WINDOW_WIDTH,WINDOW_HEIGHT);
 
 	glPointSize(5.0);
 	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable( GL_BLEND );
+	glEnable(GL_BLEND);
 
 
 	srand(time(NULL));
@@ -444,6 +538,7 @@ int main(int argc, char** argv)
 	}
 
 	free(gs.level.walls);
+	free(gs.level.bonus);
 	freeAssets(&assets);
 
 	glfwTerminate();

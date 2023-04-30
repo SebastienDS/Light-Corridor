@@ -67,7 +67,10 @@ void drawSphere() {
 }
 
 void drawPyramid() {
-	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
+	GLint polygonModeSave[2];
+	glGetIntegerv(GL_POLYGON_MODE, polygonModeSave);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPushMatrix();
 		glRotatef(90, 1, 0, 0);
 		glBegin(GL_TRIANGLES);
@@ -89,6 +92,7 @@ void drawPyramid() {
 		glEnd();
 	glPopMatrix();
 
+	glPolygonMode(GL_FRONT_AND_BACK, polygonModeSave[0]); // reset
 }
 
 void drawLosange() {
@@ -101,6 +105,9 @@ void drawLosange() {
 }
 
 void drawCube() {
+	GLint polygonModeSave[2];
+	glGetIntegerv(GL_POLYGON_MODE, polygonModeSave);
+
 	glPolygonMode(GL_FRONT_AND_BACK,GL_LINE);
 	drawSquare();
 	glPushMatrix();
@@ -122,4 +129,6 @@ void drawCube() {
 		glTranslatef(0.0f, 0.0f, 1.0f);
 		drawSquare();
 	glPopMatrix();
+
+	glPolygonMode(GL_FRONT_AND_BACK, polygonModeSave[0]); // reset
 }

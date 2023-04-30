@@ -146,7 +146,7 @@ void freeTemplates(Templates* templates) {
     free(templates->templates);
 }
 
-Level createLevel(int distance) {
+Level createLevel(int distance, int distanceBetween2Bonus) {
     Templates templates = getTemplates();
     int capacity = distance;
 
@@ -181,6 +181,21 @@ Level createLevel(int distance) {
 
             level.walls_count++;
         }
+    }
+
+    int bonus_count = 1 + (distance / distanceBetween2Bonus);
+    level.bonus_count = 0;
+    level.bonus = malloc(bonus_count * sizeof(Bonus));
+	REQUIRE_NON_NULL(level.bonus);
+
+    for (int y = distanceBetween2Bonus; y < distance; y += distanceBetween2Bonus) {
+        Bonus* bonus = &level.bonus[level.bonus_count];
+
+        int bonus_type = randint(0, 1);
+        bonus->type = bonus_type;
+        bonus->info = (Info){{0, y, 0.5}, {0.25, 0.25, 0.25}};
+
+        level.bonus_count++;
     }
 
     freeTemplates(&templates);
