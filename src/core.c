@@ -104,7 +104,7 @@ void setTemplateWallMiddleW(Template* template) {
 }
 
 Templates getTemplates() {
-    const int bonusMiddleWalls = 6;
+    const int bonusMiddleWalls = 12;
     Templates templates;
     templates.count = 12 + bonusMiddleWalls;
     templates.templates = malloc(templates.count * sizeof(Template));
@@ -128,7 +128,7 @@ Templates getTemplates() {
     setTemplateWallMiddleW(&templates.templates[10]);
     copyTemplateWithoutTransition(&templates.templates[11], &templates.templates[10]);
 
-    for (int i = 0; i < bonusMiddleWalls; i += 2) {
+    for (int i = 0; i < bonusMiddleWalls; i += 4) {
         setTemplateWallMiddleH(&templates.templates[12 + i]);
         copyTemplateWithoutTransition(&templates.templates[13 + i], &templates.templates[12 + i]);
 

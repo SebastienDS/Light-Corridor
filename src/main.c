@@ -10,6 +10,7 @@
 #include "3D_tools.h"
 #include "draw_scene.h"
 #include "core.h"
+#include "texture.h"
 
 /* Window properties */
 static const unsigned int WINDOW_WIDTH = 1000;
@@ -217,7 +218,28 @@ void drawShadow() {
 	glPopMatrix();
 }
 
-void draw(GameState* gs) {
+void drawDigit(Texture* texture) {
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, texture->texture);
+
+	glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex3f(-0.5, 0.5, 0.5);
+		
+		glTexCoord2f(1, 0);
+		glVertex3f(0.5, 0.5, 0.5);
+		
+		glTexCoord2f(1, 1);
+		glVertex3f(0.5, -0.5, 0.5);
+		
+		glTexCoord2f(0, 1);
+		glVertex3f(-0.5, -0.5, 0.5);
+	glEnd();
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDisable(GL_TEXTURE_2D);
+}
+
+void draw(GameState* gs, Assets* assets) {
 	Color corridorColor = {0.4, 0.4, 0.4};
 	glPushMatrix();
 		float position = gs->player.info.position.y - (int)gs->player.info.position.y;
@@ -245,6 +267,12 @@ void draw(GameState* gs) {
 	glPopMatrix();
 
 	drawShadow();
+
+	glPushMatrix();
+		glRotatef(-90, 1, 0, 0);
+		drawDigit(&assets->digits[0]);
+	glPopMatrix();
+
 }
 
 void update(GameState* gs) {
@@ -278,20 +306,28 @@ void update(GameState* gs) {
 			if (newMagnitude <= 0) {
 				bounce = (Vec){0, 1, 0};
 			}
-			printf("%f %f %f \n", bounce.x, bounce.y, bounce.z);
+
 			gs->ball.direction = bounce;
 		} else if (gs->ball.info.position.y <= gs->player.info.position.y) {
 			gs->player.hp--;
 			gs->set_ball_on_player = true;
+			gs->ball.is_in_collision = false;
 			gs->ball.direction = (Vec){0, 1, 0};
 		}
 	}
 	
-	
+	bool hit = false;
 	for (int i = 0; i < gs->level.walls_count; i++) {
-		if (intersectRect(gs->ball.info, gs->level.walls[i].info)) {
-			gs->ball.direction.y *= -1;
+		if (intersectRect(gs->ball.info, gs->level.walls[i].info) && !gs->ball.is_in_collision) {
+			hit = true;
+			break;
 		}
+	}
+	if (hit) {
+		gs->ball.direction.y *= -1;
+		gs->ball.is_in_collision = true;
+	} else {
+		gs->ball.is_in_collision = false;
 	}
 
 	gs->player.info.position.y += currentDirection * PLAYER_SPEED;
@@ -354,6 +390,7 @@ int main(int argc, char** argv)
 	srand(time(NULL));
 
 	gs = createGameState();
+	Assets assets = loadAssets();
 
 
 	/* Loop until the user closes the window */
@@ -386,7 +423,7 @@ int main(int argc, char** argv)
 		/* Scene rendering */
 		
 		update(&gs);
-		draw(&gs);
+		draw(&gs, &assets);
 
 
 		/* Swap front and back buffers */
@@ -407,6 +444,7 @@ int main(int argc, char** argv)
 	}
 
 	free(gs.level.walls);
+	freeAssets(&assets);
 
 	glfwTerminate();
 	return 0;

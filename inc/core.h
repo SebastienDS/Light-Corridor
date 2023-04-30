@@ -41,6 +41,7 @@ typedef struct {
     Vec direction;
     float speed;
     Color color;
+    bool is_in_collision;
 } Ball;
 
 typedef enum {
@@ -62,6 +63,15 @@ typedef struct {
     Transition transition;
 } Wall;
 
+typedef enum {
+    HEAL, MAGNET
+} BonusType;
+
+typedef struct {
+    BonusType type;
+    Info info;
+} Bonus;
+
 typedef struct {
     int distance;
     int walls_count;
@@ -78,15 +88,6 @@ typedef struct {
     bool set_ball_on_player_on_the_next_collision;
 } GameState;
 
-typedef enum {
-    HEAL, MAGNET
-} BonusType;
-
-typedef struct {
-    BonusType type;
-    Info info;
-} Bonus;
-
 typedef struct {
     int count;
     Wall* walls;
@@ -96,6 +97,9 @@ typedef struct {
     int count;
     Template* templates;
 } Templates;
+
+
+int randint(int min, int max);
 
 Transition createNoTransition();
 Transition createMovementTransition(Vec step, int from, int to, int current);

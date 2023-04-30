@@ -9,7 +9,7 @@ OBJDIR	= obj/
 
 GLOB_OBJ= $(OBJDIR)3D_tools.o
 
-OBJ= $(GLOB_OBJ) $(OBJDIR)draw_scene.o $(OBJDIR)main.o $(OBJDIR)transition.o $(OBJDIR)core.o
+OBJ= $(GLOB_OBJ) $(OBJDIR)draw_scene.o $(OBJDIR)main.o $(OBJDIR)transition.o $(OBJDIR)core.o $(OBJDIR)texture.o
 EXEC= corridor.out
 
 
