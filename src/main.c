@@ -121,6 +121,14 @@ void onKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 	}
 }
 
+double convertXPosition(double x) {
+	return x / (WINDOW_WIDTH / 2) - 1;
+}
+
+double convertYPosition(double y) {
+	return 1 - y / WINDOW_HEIGHT;
+}
+
 void onClick(GLFWwindow* window, int button, int action, int mods)
 {
 	if (action == GLFW_PRESS) {
@@ -189,7 +197,7 @@ GameState createGameState() {
 			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
-		createLevel(200 + 1, 5),
+		createLevel(1000 + 1, 5),
 		true,
 		false
 	};
@@ -325,7 +333,7 @@ void keepPlayerOnCorridor(Player* player) {
 	}
 }
 
-void update(GameState* gs) {
+void update(GameState* gs, GLFWwindow* window) {
 	if (intersectCorridorX(gs->ball.info)) {
 		gs->ball.direction.x *= -1;
 	} else if (intersectCorridorZ(gs->ball.info)) {
@@ -379,11 +387,16 @@ void update(GameState* gs) {
 		gs->player.info.position.y += currentDirection * PLAYER_SPEED;
 	}
 
-	int directionZ = playerDirection[0] - playerDirection[1];
-	int directionX = playerDirection[3] - playerDirection[2];
+	// int directionZ = playerDirection[0] - playerDirection[1];
+	// int directionX = playerDirection[3] - playerDirection[2];
 
-	gs->player.info.position.x += directionX * 0.02;
-	gs->player.info.position.z += directionZ * 0.02;
+	// gs->player.info.position.x += directionX * 0.02;
+	// gs->player.info.position.z += directionZ * 0.02;
+
+	double x, y;
+	glfwGetCursorPos(window, &x, &y);
+	gs->player.info.position.x = convertXPosition(x);	
+	gs->player.info.position.z = convertYPosition(y);	
 	
 	keepPlayerOnCorridor(&gs->player);
 
@@ -493,7 +506,7 @@ int main(int argc, char** argv)
 
 		/* Scene rendering */
 		
-		update(&gs);
+		update(&gs, window);
 		draw(&gs, &assets);
 
 
