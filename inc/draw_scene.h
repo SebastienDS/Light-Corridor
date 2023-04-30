@@ -14,8 +14,12 @@ void drawFrame();
 void drawCorridorPart(Color color);
 void drawSeparator();
 
+void drawObjectShadow(Info* info);
+
 void drawWall(Wall* wall);
 
 void drawBall(Ball* ball);
 
 void drawPlayer(Player* player);
+
+void drawBonus(Bonus* bonus);

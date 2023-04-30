@@ -55,6 +55,15 @@ void drawSeparator() {
     glPopMatrix();
 }
 
+void drawObjectShadow(Info* info) {
+    glPushMatrix();
+        glTranslatef(info->position.x, info->position.y, 0.01);
+        glScalef(info->size.x / 2, info->size.y / 2, info->size.z / 2);
+        glColor3f(0.3, 0.3, 0.3);
+        drawCircle();
+    glPopMatrix();
+}
+
 void drawWall(Wall* wall) {
     glPushMatrix();
         glColor3f(wall->color.r, wall->color.g, wall->color.b);
@@ -62,15 +71,6 @@ void drawWall(Wall* wall) {
         glRotatef(90, 1, 0, 0);
         glScalef(wall->info.size.x, wall->info.size.z, 1);
         drawFilledSquare();
-    glPopMatrix();
-}
-
-void drawBallShadow(Ball* ball) {
-    glPushMatrix();
-        glTranslatef(ball->info.position.x, ball->info.position.y, 0.01);
-        glScalef(ball->info.size.x / 2, ball->info.size.y / 2, ball->info.size.z / 2);
-        glColor3f(0.3, 0.3, 0.3);
-        drawCircle();
     glPopMatrix();
 }
 
@@ -82,7 +82,7 @@ void drawBall(Ball* ball) {
         drawSphere();
     glPopMatrix();
 
-    drawBallShadow(ball);
+    drawObjectShadow(&ball->info);
 }
 
 void drawPlayer(Player* player) {
@@ -93,4 +93,26 @@ void drawPlayer(Player* player) {
         glScalef(player->info.size.x, player->info.size.z, 1);
         drawSquare();
     glPopMatrix();
+}
+
+void drawBonus(Bonus* bonus) {
+	glPushMatrix();
+        glTranslatef(bonus->info.position.x, bonus->info.position.y, bonus->info.position.z);
+        glScalef(bonus->info.size.x / 2, bonus->info.size.y / 2, bonus->info.size.z / 2);
+		glRotatef(bonus->angle, 0, 0, 1);
+        glColor3f(1, 1, 1);
+
+		if (bonus->type == HEAL) {
+			glTranslatef(0, 0, -0.5);
+			drawCube();
+		} else if (bonus->type == MAGNET) {
+			glTranslatef(0, 0, 1);
+			drawLosange();
+		} else {
+			fprintf(stderr, "Unknown Bonus");
+			exit(1);
+		}
+    glPopMatrix();
+
+	drawObjectShadow(&bonus->info);
 }

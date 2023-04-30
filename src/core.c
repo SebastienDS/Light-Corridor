@@ -103,10 +103,72 @@ void setTemplateWallMiddleW(Template* template) {
     template->walls[0].transition = createMovementTransition((Vec){0, 0, 0.01}, -35, 35, 0);
 }
 
+void setTemplateWallTopLeftScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{-0.75, 0, 0.75}, {0.5, 0, 0.5}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0.01}, -50, 50, -50);
+}
+
+void setTemplateWallTopRightScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{0.75, 0, 0.75}, {0.5, 0, 0.5}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0.01}, -50, 50, -50);
+}
+
+void setTemplateWallBottomLeftScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{-0.75, 0, 0.25}, {0.5, 0, 0.5}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0.01}, -50, 50, -50);
+}
+
+void setTemplateWallBottomRightScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{0.75, 0, 0.25}, {0.5, 0, 0.5}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0.01}, -50, 50, -50);
+}
+
+void setTemplateWallMiddleHScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{0, 0, 0.5}, {0.5, 0, 1}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0}, -35, 35, -35);
+}
+
+void setTemplateWallLeftScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{-0.75, 0, 0.5}, {0.5, 0, 1}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0}, -100, 100, -100);
+}
+
+void setTemplateWallRightScale(Template* template) {
+    template->count = 1;
+    template->walls = malloc(template->count * sizeof(Wall));
+	REQUIRE_NON_NULL(template->walls);
+
+    template->walls[0].info = (Info){{0.75, 0, 0.5}, {0.5, 0, 1}};
+    template->walls[0].transition = createScalingTransition((Vec){0.01, 0, 0}, -100, 100, -100);
+}
+
 Templates getTemplates() {
-    const int bonusMiddleWalls = 12;
     Templates templates;
-    templates.count = 12 + bonusMiddleWalls;
+    templates.count = 19;
     templates.templates = malloc(templates.count * sizeof(Template));
 	REQUIRE_NON_NULL(templates.templates);
 
@@ -128,13 +190,15 @@ Templates getTemplates() {
     setTemplateWallMiddleW(&templates.templates[10]);
     copyTemplateWithoutTransition(&templates.templates[11], &templates.templates[10]);
 
-    for (int i = 0; i < bonusMiddleWalls; i += 4) {
-        setTemplateWallMiddleH(&templates.templates[12 + i]);
-        copyTemplateWithoutTransition(&templates.templates[13 + i], &templates.templates[12 + i]);
+    setTemplateWallTopLeftScale(&templates.templates[12]);
+    setTemplateWallTopRightScale(&templates.templates[13]);
+    setTemplateWallBottomLeftScale(&templates.templates[14]);
+    setTemplateWallBottomRightScale(&templates.templates[15]);
 
-        setTemplateWallMiddleW(&templates.templates[14 + i]);
-        copyTemplateWithoutTransition(&templates.templates[15 + i], &templates.templates[14 + i]);
-    }
+    setTemplateWallMiddleHScale(&templates.templates[16]);
+
+    setTemplateWallLeftScale(&templates.templates[17]);
+    setTemplateWallRightScale(&templates.templates[18]);
 
     return templates;
 }
@@ -193,7 +257,9 @@ Level createLevel(int distance, int distanceBetween2Bonus) {
 
         int bonus_type = randint(0, 1);
         bonus->type = bonus_type;
-        bonus->info = (Info){{0, y, 0.5}, {0.25, 0.25, 0.25}};
+        int pos = randint(0, 2);
+        float position = pos == 0 ? 0 : pos == 1 ? -0.5 : 0.5;
+        bonus->info = (Info){{position, y + 0.5, 0.5}, {0.25, 0.25, 0.25}};
 
         level.bonus_count++;
     }

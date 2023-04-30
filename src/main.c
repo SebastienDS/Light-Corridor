@@ -189,7 +189,7 @@ GameState createGameState() {
 			BALL_SPEED,
 			(Color){0, 1, 0}
 		},
-		createLevel(200 + 1, 3),
+		createLevel(200 + 1, 5),
 		true,
 		false
 	};
@@ -258,27 +258,6 @@ void drawDigit(Texture* texture) {
 	glDisable(GL_TEXTURE_2D);
 }
 
-void drawBonus(Bonus* bonus) {
-	glPushMatrix();
-        glTranslatef(bonus->info.position.x, bonus->info.position.y, bonus->info.position.z);
-        glScalef(bonus->info.size.x / 2, bonus->info.size.y / 2, bonus->info.size.z / 2);
-		glRotatef(bonus->angle, 0, 0, 1);
-        glColor3f(1, 1, 1);
-
-		if (bonus->type == HEAL) {
-			glTranslatef(0, 0, -0.5);
-			drawCube();
-		} else if (bonus->type == MAGNET) {
-			glTranslatef(0, 0, 1);
-			drawLosange();
-		} else {
-			fprintf(stderr, "Unknown Bonus");
-			exit(1);
-		}
-    glPopMatrix();
-
-}
-
 void draw(GameState* gs, Assets* assets) {
 	Color corridorColor = {0.4, 0.4, 0.4};
 	glPushMatrix();
@@ -300,6 +279,7 @@ void draw(GameState* gs, Assets* assets) {
 		drawBall(&gs->ball);
 
 		for (int i = gs->level.walls_count - 1; i >= 0; i--) {
+			if (gs->level.walls[i].info.position.y < gs->player.info.position.y) continue;
 			drawWall(&gs->level.walls[i]);
 		}
 
@@ -429,11 +409,10 @@ void update(GameState* gs) {
 
 		if (intersectRect(gs->player.info, bonus->info)) {
 			if (bonus->taken) continue;
-			
+
 			bonus->taken = true;
 			if (bonus->type == HEAL && gs->player.hp < PLAYER_BASE_HP) {
 				gs->player.hp++;
-				printf("NEW HP");
 			} else if (bonus->type == MAGNET) {
 				gs->set_ball_on_player_on_the_next_collision = true;
 			}
@@ -444,8 +423,6 @@ void update(GameState* gs) {
 		if (gs->level.bonus[i].taken) continue;
 		drawBonus(&gs->level.bonus[i]);
 	}
-
-	printf("%d\n", gs->player.hp);
 }
 
 int main(int argc, char** argv)
@@ -518,6 +495,9 @@ int main(int argc, char** argv)
 		
 		update(&gs);
 		draw(&gs, &assets);
+
+
+		printf("SCORE : %d - HP : %d\n", (int)gs.player.info.position.y * 100, gs.player.hp);
 
 
 		/* Swap front and back buffers */
