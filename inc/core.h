@@ -87,6 +87,7 @@ typedef struct {
 } Level;
 
 typedef struct {
+    int score;
     Player player;
     Ball ball;
     Level level;
@@ -105,6 +106,10 @@ typedef struct {
     int count;
     Template* templates;
 } Templates;
+                                    
+typedef struct {
+    bool have_line[7]; // top top-left top-right bottom-left bottom-right bottom middle
+} Digit;
 
 
 int randint(int min, int max);

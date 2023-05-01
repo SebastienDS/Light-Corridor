@@ -70,6 +70,7 @@ double convertYPosition(double y) {
 
 GameState createGameState() {
 	return (GameState){
+		0,
 		(Player){
 			(Info){{0, 0, 0.5}, {0.25, 0.25, 0.25}},
 			(Color){0, 0, 1},
@@ -286,28 +287,28 @@ void drawShadow() {
 	glPopMatrix();
 }
 
-void drawDigit(Texture* texture) {
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, texture->texture);
+// void drawDigit(Texture* texture) {
+// 	glEnable(GL_TEXTURE_2D);
+// 	glBindTexture(GL_TEXTURE_2D, texture->texture);
 
-	glBegin(GL_QUADS);
-		glTexCoord2f(0, 0);
-		glVertex2f(-0.5, 0.5);
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2f(0, 0);
+// 		glVertex2f(-0.5, 0.5);
 		
-		glTexCoord2f(1, 0);
-		glVertex2f(0.5, 0.5);
+// 		glTexCoord2f(1, 0);
+// 		glVertex2f(0.5, 0.5);
 		
-		glTexCoord2f(1, 1);
-		glVertex2f(0.5, -0.5);
+// 		glTexCoord2f(1, 1);
+// 		glVertex2f(0.5, -0.5);
 		
-		glTexCoord2f(0, 1);
-		glVertex2f(-0.5, -0.5);
-	glEnd();
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glDisable(GL_TEXTURE_2D);
-}
+// 		glTexCoord2f(0, 1);
+// 		glVertex2f(-0.5, -0.5);
+// 	glEnd();
+// 	glBindTexture(GL_TEXTURE_2D, 0);
+// 	glDisable(GL_TEXTURE_2D);
+// }
 
-void draw(GameState* gs, Assets* assets) {
+void draw(GameState* gs, Digit digits[10]) {
 	Color corridorColor = {0.4, 0.4, 0.4};
 
 	glPushMatrix();
@@ -357,6 +358,31 @@ void draw(GameState* gs, Assets* assets) {
 	// 	glTranslatef(0, 0.2, 0.2);
 	// 	drawDigit(&assets->digits[1]);
 	// glPopMatrix();
+
+	glPushMatrix();
+		glColor3f(1, 1, 1);
+		glTranslatef(0.9, 0, 0.85);
+		glScalef(0.15, 0.15, 0.15);
+
+		int score = gs->score;
+		if (score == 0) {
+			drawDigit(&digits[0]);
+		}
+		while (score) {
+			drawDigit(&digits[score % 10]);
+			glTranslatef(-0.2, 0, 0);
+			score /= 10;
+		}
+	glPopMatrix();
+
+	glPushMatrix();
+		glColor3f(1, 1, 1);
+		glTranslatef(-0.9, 0, 0.85);
+		glScalef(0.15, 0.15, 0.15);
+
+	
+		drawDigit(&digits[gs->player.hp]);
+	glPopMatrix();
 }
 
 bool playerIntersectWall(GameState* gs) {
@@ -386,6 +412,13 @@ void keepPlayerOnCorridor(Player* player) {
 }
 
 void update(GameState* gs, GLFWwindow* window) {
+	gs->score = gs->player.info.position.y * 100;
+	if (gs->player.info.position.y >= gs->level.distance) {
+		printf("GAGNE\n");
+		gameAlreadyRunning = false;
+		setState(&state, MENU, window);
+	}
+
 	if (intersectCorridorX(gs->ball.info)) {
 		gs->ball.direction.x *= -1;
 	} else if (intersectCorridorZ(gs->ball.info)) {
@@ -420,22 +453,25 @@ void update(GameState* gs, GLFWwindow* window) {
 			gs->ball.direction = (Vec){0, 1, 0};
 
 			if (gs->player.hp <= 0) {
-				setState(&state, MENU, window);
+				printf("PERDU\n");
 				gameAlreadyRunning = false;
+				setState(&state, MENU, window);
 			}
 		}
 	}
 	
 	bool hit = false;
 	for (int i = 0; i < gs->level.walls_count; i++) {
-		if (intersectRect(gs->ball.info, gs->level.walls[i].info) && !gs->ball.is_in_collision) {
+		if (intersectRect(gs->ball.info, gs->level.walls[i].info)) {
 			hit = true;
 			break;
 		}
 	}
 	if (hit) {
-		gs->ball.direction.y *= -1;
-		gs->ball.is_in_collision = true;
+		if (!gs->ball.is_in_collision) {
+			gs->ball.direction.y *= -1;
+			gs->ball.is_in_collision = true;
+		}
 	} else {
 		gs->ball.is_in_collision = false;
 	}
@@ -562,10 +598,22 @@ int main(int argc, char** argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
+	Digit digits[10] = {
+		(Digit){{true, true, true, true, true, true, false}},		// 0
+		(Digit){{false, false, true, false, true, false, false}},   // 1
+		(Digit){{true, false, true, true, false, true, true}},	    // 2
+		(Digit){{true, false, true, false, true, true, true}},      // 3
+		(Digit){{false, true, true, false, true, false, true}},     // 4
+		(Digit){{true, true, false, false, true, true, true}},      // 5
+		(Digit){{true, true, false, true, true, true, true}},       // 6
+		(Digit){{true, false, true, false, true, false, false}},    // 7
+		(Digit){{true, true, true, true, true, true, true}},        // 8
+		(Digit){{true, true, true, false, true, true, true}},       // 9
+	};
 
 	srand(time(NULL));
 
-	Assets assets = loadAssets();
+	// Assets assets = loadAssets();
 
 	setState(&state, MENU, window);
 
@@ -590,9 +638,7 @@ int main(int argc, char** argv)
 
 		if (state == IN_GAME) {
 			update(&gs, window);
-			draw(&gs, &assets);
-
-			printf("SCORE : %d - HP : %d\n", (int)gs.player.info.position.y * 100, gs.player.hp);
+			draw(&gs, digits);
 		} else if (state == MENU) {
 			drawMenu();
 		}
@@ -616,7 +662,7 @@ int main(int argc, char** argv)
 
 	free(gs.level.walls);
 	free(gs.level.bonus);
-	freeAssets(&assets);
+	// freeAssets(&assets);
 
 	glfwTerminate();
 	return 0;

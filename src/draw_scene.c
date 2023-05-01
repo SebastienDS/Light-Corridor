@@ -118,3 +118,42 @@ void drawBonus(Bonus* bonus) {
 
 	drawObjectShadow(&bonus->info);
 }
+
+void drawDigit(Digit* digit) {
+    glPushMatrix();
+        glTranslatef(0, 0, 0.5);
+        glRotatef(-90, 1, 0, 0);
+        glScalef(0.25, 0.25, 0.25);
+
+        glBegin(GL_LINES);
+            if (digit->have_line[0]) {
+                glVertex2f(-0.23, -0.5);
+                glVertex2f(0.23, -0.5);
+            }
+            if (digit->have_line[1]) {
+                glVertex2f(-0.25, -0.48);
+                glVertex2f(-0.25, -0.02);
+            }
+            if (digit->have_line[2]) {
+                glVertex2f(0.25, -0.48);
+                glVertex2f(0.25, -0.02);
+            }
+            if (digit->have_line[3]) {
+                glVertex2f(-0.25, 0.02);
+                glVertex2f(-0.25, 0.48);
+            }
+            if (digit->have_line[4]) {
+                glVertex2f(0.25, 0.02);
+                glVertex2f(0.25, 0.48);
+            }
+            if (digit->have_line[5]) {
+                glVertex2f(-0.23, 0.5);
+                glVertex2f(0.23, 0.5);
+            }
+            if (digit->have_line[6]) {
+                glVertex2f(-0.23, 0);
+                glVertex2f(0.23, 0);
+            }
+        glEnd();
+    glPopMatrix();
+}

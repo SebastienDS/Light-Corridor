@@ -23,3 +23,5 @@ void drawBall(Ball* ball);
 void drawPlayer(Player* player);
 
 void drawBonus(Bonus* bonus);
+
+void drawDigit(Digit* digit);

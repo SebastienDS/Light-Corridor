@@ -26,7 +26,7 @@ clean :
 	rm -rf *~
 	rm -rf $(SRCDIR)*/*~
 	rm -rf $(OBJDIR)
-	rm -rf $(BINDIR)*
+	rm -rf $(BINDIR)
 
 $(OBJDIR)%.o: $(SRCDIR)%.c $(INCDIR)*.h
 	mkdir -p `dirname $@`
